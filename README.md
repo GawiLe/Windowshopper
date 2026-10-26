@@ -18,7 +18,8 @@ npm run dev     # http://localhost:3000
 
 > De demo bewaart alles in de browser (localStorage). Mails worden niet echt verstuurd maar
 > verschijnen in **Admin → Mails**. Zie [`docs/V0-MIGRATIE.md`](docs/V0-MIGRATIE.md) om live te gaan
-> met Supabase + Resend, en [`supabase/schema.sql`](supabase/schema.sql) voor de database.
+> met **Neon** (database), Vercel Blob (foto's) en Resend (mail). De database staat in
+> [`db/schema.sql`](db/schema.sql), demo-data in [`db/seed.sql`](db/seed.sql) (`npm run db:seed-sql`).
 
 ## Functies
 **Bezoekers**
@@ -54,6 +55,7 @@ app/winkelier/     winkeliersomgeving
 app/admin/         beheeromgeving
 components/        UI-componenten (kaart, productkaart, formulieren, sneeuw)
 lib/               types, demo-store, seed-data, e-mailtemplates, helpers
-supabase/          databaseschema met RLS, triggers en opschoon-jobs
+db/                Neon/Postgres-schema (triggers, reserveerfunctie, opschonen) + seed
+scripts/           generator voor db/seed.sql
 docs/              stappenplan naar live
 ```

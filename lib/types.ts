@@ -1,4 +1,4 @@
-// Gedeelde datatypes. Deze spiegelen 1-op-1 de tabellen in supabase/schema.sql,
+// Gedeelde datatypes. Deze spiegelen 1-op-1 de tabellen in db/schema.sql (Neon),
 // zodat de lokale demo-opslag later eenvoudig vervangen kan worden door een echte database.
 
 export type ID = string
@@ -33,7 +33,7 @@ export interface Shop {
   lng: number | null
   allowReservations: boolean
   active: boolean
-  /** demo-inlog voor de winkelier. In productie: Supabase Auth (magic link). */
+  /** demo-inlog voor de winkelier. In productie: inloglink per e-mail (tabellen users/login_tokens/sessions). */
   loginCode: string
   createdAt: string
 }

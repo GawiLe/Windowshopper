@@ -2,7 +2,7 @@
 
 // Lokale "database" voor de demo: alles staat in localStorage van de browser.
 // Alle schrijfacties lopen via de functies in `actions`, zodat je ze later 1-op-1 kunt
-// vervangen door Supabase-calls / server actions (zie docs/V0-MIGRATIE.md).
+// vervangen door Neon-queries in server actions (zie docs/V0-MIGRATIE.md).
 
 import { useSyncExternalStore } from "react"
 import { createSeed, DB_VERSION } from "./seed"
@@ -348,7 +348,7 @@ export function decodeList(s: string): ListEntry[] {
 }
 
 // ---------- sessie (demo-inlog) ----------
-// In productie vervang je dit door Supabase Auth (magic link per e-mail) + Row Level Security.
+// In productie vervang je dit door een inloglink per e-mail + sessie-cookie (zie db/schema.sql: users, login_tokens, sessions).
 
 export type Session = { role: "shop"; shopId: string } | { role: "admin"; asShopId?: string } | null
 

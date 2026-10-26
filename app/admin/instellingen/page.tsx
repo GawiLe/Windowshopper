@@ -239,7 +239,7 @@ export default function SettingsPage() {
 
       <Card>
         <h2 className="mb-4 text-lg font-bold">Beveiliging & data</h2>
-        <Field label="Admin-wachtwoord (demo)" hint="In de live-versie log je in via Supabase Auth">
+        <Field label="Admin-wachtwoord (demo)" hint="In de live-versie log je in met een inloglink per e-mail">
           <input type="text" value={s.adminPassword} onChange={(e) => set("adminPassword", e.target.value)} className={inputCls} />
         </Field>
         <div className="mt-4 flex flex-wrap gap-2">
