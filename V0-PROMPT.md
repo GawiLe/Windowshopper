@@ -36,7 +36,7 @@ Lees eerst `README.md`, `docs/V0-MIGRATIE.md`, `db/schema.sql`, `lib/types.ts` e
 - Verwijder daarna `app/api/mail/route.ts`: die publieke route is alleen voor de demo.
 
 ## 5. Kaart
-- `components/ShopMap.tsx` (Leaflet + CARTO/OpenStreetMap-tegels) blijft zoals hij is. Winkels hebben `lat`/`lng`.
+- `components/ShopMap.tsx` (Leaflet + OpenStreetMap-kaart) blijft zoals hij is. Winkels hebben `lat`/`lng`.
 - Zet de coördinaten op de **server** zodra de beheerder een winkel opslaat zonder `lat`/`lng` (of met een gewijzigd adres): roep de PDOK Locatieserver aan (`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=<adres plaats>&fq=type:adres&rows=1&fl=centroide_ll`, zie `geocodeAddress()` in `lib/geo.ts`) en sla het resultaat op. Verwijder daarna het automatisch opzoeken in de browser uit `ShopMap` (de beheerder kan de pin nog steeds verplaatsen door op de kaart te tikken).
 
 ## 6. Foto's

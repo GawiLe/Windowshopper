@@ -9,12 +9,14 @@ import { monogram } from "@/lib/icons"
 import type { Shop } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-// Echte kaart (Leaflet + OpenStreetMap-data, kaartstijl CARTO Voyager).
+// Echte kaart: Leaflet met de standaard OpenStreetMap-kaart.
 // Winkels zonder coördinaten worden automatisch opgezocht via hun adres (PDOK).
+// Let op het gebruiksbeleid van de OSM-tegelserver (https://operations.osmfoundation.org/policies/tiles/):
+// prima voor een site als deze; bij heel veel verkeer kun je TILES vervangen door een betaalde tegeldienst.
 
-const TILES = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+const TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 const ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
+  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>-bijdragers'
 
 // adressen die deze sessie al zijn opgezocht (ook als dat mislukte), om niet steeds opnieuw te vragen
 const tried = new Set<string>()
@@ -95,7 +97,7 @@ export function ShopMap({
       boxZoom: !compact,
       keyboard: !compact,
     })
-    L.tileLayer(TILES, { attribution: ATTRIBUTION, maxZoom: 20, subdomains: "abcd" }).addTo(m)
+    L.tileLayer(TILES, { attribution: ATTRIBUTION, maxZoom: 19 }).addTo(m)
     m.on("click", (e) => callbacks.current.onPick?.(e.latlng.lat, e.latlng.lng))
     map.current = m
     return () => {

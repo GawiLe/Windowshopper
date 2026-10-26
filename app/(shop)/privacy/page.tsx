@@ -99,8 +99,8 @@ export default function PrivacyPage() {
         <section>
           <h2>6. De kaart</h2>
           <p>
-            Op de kaart tonen we waar de winkels zitten. De kaartafbeeldingen worden geladen bij CARTO (kaartgegevens van
-            OpenStreetMap). Daarbij ziet die dienst, zoals bij elke website, je IP-adres; er worden geen cookies geplaatst en wij
+            Op de kaart tonen we waar de winkels zitten. De kaartafbeeldingen worden geladen van OpenStreetMap
+            (OpenStreetMap Foundation). Daarbij ziet die dienst, zoals bij elke website, je IP-adres; er worden geen cookies geplaatst en wij
             delen geen andere gegevens. Winkeladressen worden omgezet naar een plek op de kaart via de adresdienst van de
             Nederlandse overheid (PDOK); daarbij worden alleen winkeladressen verstuurd, nooit gegevens van bezoekers.
           </p>
