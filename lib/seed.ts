@@ -1,8 +1,10 @@
 import type { Database, OpeningHours, Product, Shop } from "./types"
 
+// Winkelgebied De Kempenaer (Oegstgeest)
+
 // Demo-data. Alle winkels hieronder zijn fictief en dienen alleen om de app te laten zien.
 
-const hours = (late = true): OpeningHours[] => [
+export const hours = (late = true): OpeningHours[] => [
   { day: 0, open: null, close: null },
   { day: 1, open: "13:00", close: "18:00" },
   { day: 2, open: "09:30", close: "18:00" },
@@ -12,7 +14,7 @@ const hours = (late = true): OpeningHours[] => [
   { day: 6, open: "09:30", close: "17:00" },
 ]
 
-const now = new Date("2026-11-01T10:00:00").toISOString()
+export const now = new Date("2026-11-01T10:00:00").toISOString()
 
 type ShopSeed = Omit<Shop, "id" | "createdAt" | "openingHours" | "lat" | "lng" | "active" | "logo" | "website" | "instagram"> &
   Partial<Shop>
@@ -133,7 +135,7 @@ const shopSeeds: ShopSeed[] = [
 ]
 
 const shops: Shop[] = shopSeeds.map((s, i) => ({
-  id: `shop_${i + 1}`,
+  id: `kmp_shop_${i + 1}`,
   logo: null,
   website: "",
   instagram: "",
@@ -148,48 +150,48 @@ const shops: Shop[] = shopSeeds.map((s, i) => ({
 type P = [title: string, price: number, icon: string, description: string, opts?: Partial<Product>]
 
 const productSeeds: Record<string, P[]> = {
-  shop_1: [
+  kmp_shop_1: [
     ["Kerstverhalen voor bij de open haard", 24.95, "book-open", "Een prachtig gebonden bundel met twaalf winterse verhalen van Nederlandse schrijvers. Ideaal om voor te lezen op kerstavond."],
     ["Puzzel 1000 stukjes – Winters dorp", 19.99, "puzzle", "Een sfeervolle illustratie van een besneeuwde dorpsstraat. Voor lange winteravonden.", { stockMode: "count", stock: 6 }],
     ["Notitieboek linnen, goudfolie", 16.5, "notebook", "Linnen notitieboek met goudfolie op de cover, 192 pagina's met stippen.", { stockMode: "count", stock: 2 }],
     ["Kerstkaarten set van 10", 9.95, "mail", "Set van tien illustratiekaarten met envelop, gedrukt op gerecycled papier."],
     ["Kookboek ‘Winterfeest’", 29.95, "cooking-pot", "Feestelijke recepten voor de hele decembermaand, van ontbijt tot dessert.", { inStock: false }],
   ],
-  shop_2: [
+  kmp_shop_2: [
     ["Kerstpakket ‘Proeverij’", 39.95, "gift", "Vier ambachtelijke kazen, vijgenbrood, chutney en een fles huiswijn in een houten kistje.", { stockMode: "count", stock: 8 }],
     ["Truffelkaas 400 gram", 14.5, "package", "Romige Goudse kaas met zwarte truffel, vers voor je gesneden aan de toonbank.", { reservable: false }],
     ["Kaasplank eikenhout met messen", 34.95, "utensils", "Robuuste kaasplank van Nederlands eikenhout met drie kaasmesjes."],
     ["Vijgenchutney", 6.95, "glass-water", "Huisgemaakte chutney van vijgen en port. Heerlijk bij oude kaas."],
   ],
-  shop_3: [
+  kmp_shop_3: [
     ["Geurkaars ‘Dennenbos’", 24.5, "flame", "Handgegoten sojawaskaars met de geur van dennennaalden en ceder. Brandtijd ±45 uur."],
     ["Keramiek mok, goudrand", 19.95, "coffee", "Handgedraaide mok met een randje bladgoud. Ieder exemplaar is uniek.", { stockMode: "count", stock: 4 }],
     ["Plaid wol, oker", 79.0, "feather", "Zachte plaid van gerecyclede wol in warm oker, 130x170 cm."],
     ["Kerstster messing", 29.95, "star", "Minimalistische ster om in de boom of aan het raam te hangen."],
     ["Vaasje ‘Ijsbloem’", 34.5, "flower", "Mondgeblazen glazen vaasje met een subtiele ijsbloem-textuur."],
   ],
-  shop_4: [
+  kmp_shop_4: [
     ["Houten treinset", 49.95, "train", "Klassieke houten trein met rails, brug en drie wagons. Vanaf 3 jaar.", { stockMode: "count", stock: 3 }],
     ["Knuffel ijsbeer", 22.5, "heart", "Superzachte ijsbeer van 35 cm, wasbaar op 30 graden."],
     ["Familiespel ‘Sneeuwballen’", 27.95, "dice", "Een razendsnel kaartspel voor 2–6 spelers vanaf 7 jaar."],
     ["Knutselset kerstversiering", 14.95, "scissors", "Maak je eigen vilten kersthangers. Inclusief naald, draad en patronen."],
   ],
-  shop_5: [
+  kmp_shop_5: [
     ["Deurkrans ‘Winterbos’", 34.95, "tree-pine", "Handgebonden krans van verse dennentakken, eucalyptus en gedroogde sinaasappel.", { stockMode: "count", stock: 10 }],
     ["Amaryllis in pot", 17.5, "flower2", "Een rode amaryllis met bolletje in een zinken potje. Bloeit rond de kerst."],
     ["Tafelstuk met kaars", 27.5, "leaf", "Feestelijk tafelstuk met mos, kerstgroen en een witte stompkaars."],
   ],
-  shop_6: [
+  kmp_shop_6: [
     ["Ketting ‘Sneeuwvlok’ zilver", 89.0, "snowflake", "Fijne zilveren ketting met handgezaagde sneeuwvlok-hanger.", { stockMode: "count", stock: 5 }],
     ["Oorbellen goud, druppel", 129.0, "sparkles", "14 karaat gouden oorbellen van gerecycled goud."],
     ["Ring met graveerruimte", 69.0, "gem", "Zilveren ring; we graveren gratis een naam of datum terwijl je wacht."],
   ],
-  shop_7: [
+  kmp_shop_7: [
     ["Kerstblend koffiebonen 250 g", 11.95, "coffee", "Onze eigen kerstmelange met tonen van kaneel en pure chocolade."],
     ["Theedoos ‘Winteravond’", 18.5, "coffee", "Drie losse theesoorten in een mooi blik, met theezeefje."],
     ["Kerstkoekjestrommel", 12.95, "cookie", "Trommel vol zelfgebakken kruidnoten, sterretjes en roomboterkransjes."],
   ],
-  shop_8: [
+  kmp_shop_8: [
     ["Sjaal kasjmier, bordeaux", 69.95, "shirt", "Heerlijk zachte sjaal van 100% kasjmier in diep bordeaux.", { stockMode: "count", stock: 7 }],
     ["Gebreide muts met pompon", 29.95, "feather", "Wollen muts met een pompon van imitatiebont."],
     ["Handschoenen leer", 49.95, "handbag", "Leren handschoenen met kasjmier voering, dames en heren."],
@@ -222,11 +224,8 @@ const products: Product[] = Object.entries(productSeeds).flatMap(([shopId, list]
   })),
 )
 
-export const DB_VERSION = 4
-
-export function createSeed(): Database {
+export function createKempenaer(): Database {
   return {
-    version: DB_VERSION,
     settings: {
       siteName: "Windowshoppen",
       areaName: "De Kempenaer",
@@ -268,13 +267,11 @@ export function createSeed(): Database {
         kvk: "00000000",
         retentionDays: 30,
       },
-      adminEmail: "lgawi@connect-create.nl",
-      // SHA-256 van "windowshoppen:" + wachtwoord. Wijzig het wachtwoord via Admin → Instellingen.
-      adminPasswordHash: "692cc947c87c007aa6b742675a8785162d1c13d0e8017d8043fb548f63cccd4c",
+      brand: { logo: "/brand/kempenaer-emblem.svg", mark: "/brand/kempenaer-crest.svg", favicon: "/brand/kempenaer-logo.svg" },
       updatedAt: now,
     },
-    shops,
-    products,
+    shops: structuredClone(shops),
+    products: structuredClone(products),
     reservations: [],
     emails: [],
   }

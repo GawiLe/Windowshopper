@@ -227,3 +227,78 @@ export function SingleImagePicker({ value, onChange, label = "Logo" }: { value: 
     </div>
   )
 }
+
+/** Logo/favicon uploaden met behoud van transparantie (SVG blijft SVG, andere formaten → PNG). */
+export function BrandImagePicker({
+  label,
+  hint,
+  value,
+  onChange,
+  max = 600,
+  dark = true,
+}: {
+  label: string
+  hint?: string
+  value: string | null
+  onChange: (v: string | null) => void
+  max?: number
+  dark?: boolean
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  const read = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader()
+      r.onerror = () => reject(r.error)
+      r.onload = () => resolve(r.result as string)
+      r.readAsDataURL(file)
+    })
+  const handle = async (file?: File) => {
+    if (!file) return
+    try {
+      if (file.type === "image/svg+xml") {
+        if (file.size > 300_000) return toast("Dit SVG-bestand is te groot (max. 300 kB)")
+        return onChange(await read(file))
+      }
+      const src = await read(file)
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, max / Math.max(img.width, img.height))
+        const canvas = document.createElement("canvas")
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height)
+        onChange(canvas.toDataURL("image/png"))
+      }
+      img.src = src
+    } catch {
+      toast("Dit bestand kon niet worden gelezen")
+    }
+  }
+  return (
+    <div>
+      <p className="text-[15px] font-bold">{label}</p>
+      {hint && <p className="text-xs text-stone-500">{hint}</p>}
+      <div className="mt-2 flex items-center gap-3">
+        <div className={cn("flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl p-2 ring-1 ring-stone-200", dark ? "bg-primary" : "bg-white")}>
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt={label} className="max-h-full max-w-full object-contain" />
+          ) : (
+            <span className="text-xs text-white/60">Geen</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <button type="button" onClick={() => ref.current?.click()} className="h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-white">
+            {value ? "Vervangen" : "Uploaden"}
+          </button>
+          {value && (
+            <button type="button" onClick={() => onChange(null)} className="text-sm font-medium text-accent">
+              Verwijderen
+            </button>
+          )}
+        </div>
+      </div>
+      <input ref={ref} type="file" accept="image/svg+xml,image/png,image/webp,image/jpeg" className="hidden" onChange={(e) => { handle(e.target.files?.[0]); e.target.value = "" }} />
+    </div>
+  )
+}

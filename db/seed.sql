@@ -1,144 +1,181 @@
 -- Gegenereerd door scripts/generate-seed-sql.ts – niet met de hand bewerken.
 -- Demo-data: alle winkels zijn fictief.
 begin;
+-- seed werkt over alle gebieden heen
+select set_config('app.platform', 'super', true);
 
-update site_settings set
+-- ===== Winkelgebied: De Kempenaer =====
+insert into areas (slug, name) values ('kempenaer', 'De Kempenaer');
+insert into area_domains (domain, area_id) values ('shoppenkempenaer.nl', (select id from areas where slug = 'kempenaer')) on conflict do nothing;
+insert into area_domains (domain, area_id) values ('shoppenkempenaer.nl', (select id from areas where slug = 'kempenaer')) on conflict do nothing;
+update area_settings set
   site_name = 'Windowshoppen', area_name = 'De Kempenaer', town = 'Oegstgeest',
   hero_title = 'Feestelijk windowshoppen in De Kempenaer', hero_subtitle = 'Struin door de online winkelstraat, maak je eigen kadolijstje en haal je cadeaus op bij de winkels in het dorp.',
   intro_text = 'Deze december zetten de winkeliers van winkelgebied De Kempenaer hun mooiste kadotips voor je klaar. Zet wat je leuk vindt op je lijstje, laat het eventueel een dag reserveren en loop gezellig langs de etalages om alles op te halen.', footer_text = 'Een initiatief van de winkeliers van winkelgebied De Kempenaer in Oegstgeest. Fijne feestdagen!',
   campaign_start = '2026-11-20', campaign_end = '2026-12-31',
   max_products_per_shop = 20, reservation_hours = 24,
   reservations_enabled = true, snow_enabled = true, map = '{"lat":52.1806,"lng":4.4706,"zoom":17}'::jsonb,
-  colors = '{"primary":"#023934","accent":"#9b2c2c","gold":"#c09a5e","background":"#f8f4ec","text":"#1f2a28"}'::jsonb, categories = array['Boeken & papier', 'Eten & drinken', 'Wonen & lifestyle', 'Kinderen & speelgoed', 'Bloemen & planten', 'Mode & sieraden', 'Beauty & verzorging', 'Overig']::text[], privacy = '{"controllerName":"Winkeliersvereniging De Kempenaer","controllerAddress":"De Kempenaerstraat, Oegstgeest","contactEmail":"privacy@example.nl","kvk":"00000000","retentionDays":30}'::jsonb,
+  colors = '{"primary":"#023934","accent":"#9b2c2c","gold":"#c09a5e","background":"#f8f4ec","text":"#1f2a28"}'::jsonb, brand = '{"logo":"/brand/kempenaer-emblem.svg","mark":"/brand/kempenaer-crest.svg","favicon":"/brand/kempenaer-logo.svg"}'::jsonb, categories = array['Boeken & papier', 'Eten & drinken', 'Wonen & lifestyle', 'Kinderen & speelgoed', 'Bloemen & planten', 'Mode & sieraden', 'Beauty & verzorging', 'Overig']::text[], privacy = '{"controllerName":"Winkeliersvereniging De Kempenaer","controllerAddress":"De Kempenaerstraat, Oegstgeest","contactEmail":"privacy@example.nl","kvk":"00000000","retentionDays":30}'::jsonb,
   updated_at = now()
-where id = 1;
+where area_id = (select id from areas where slug = 'kempenaer');
 
-insert into shops (slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
-values ('de-boekenhoek', 'De Boekenhoek', 'Boeken, kaarten & leesplezier', 'Al ruim dertig jaar dé boekwinkel van het dorp. Wij pakken elk boek gratis in met een strik van goudlint en helpen je graag aan het perfecte leescadeau.', 'Boeken & papier', null, '#2f5d50', 'library', 'De Kempenaerstraat 12', '071-0000001', 'boekenhoek@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
-insert into users (email, name, role, shop_id) select 'boekenhoek@example.nl', 'De Boekenhoek', 'shop', id from shops where slug = 'de-boekenhoek';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Kerstverhalen voor bij de open haard', 'Een prachtig gebonden bundel met twaalf winterse verhalen van Nederlandse schrijvers. Ideaal om voor te lezen op kerstavond.', 2495, '{}'::text[], 'book-open', 'Boeken & papier', '{}'::text[], 'toggle', 0, true, true, true, 0
-from shops where slug = 'de-boekenhoek';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Puzzel 1000 stukjes – Winters dorp', 'Een sfeervolle illustratie van een besneeuwde dorpsstraat. Voor lange winteravonden.', 1999, '{}'::text[], 'puzzle', 'Boeken & papier', '{}'::text[], 'count', 6, true, true, true, 1
-from shops where slug = 'de-boekenhoek';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Notitieboek linnen, goudfolie', 'Linnen notitieboek met goudfolie op de cover, 192 pagina''s met stippen.', 1650, '{}'::text[], 'notebook', 'Boeken & papier', '{}'::text[], 'count', 2, true, true, true, 2
-from shops where slug = 'de-boekenhoek';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Kerstkaarten set van 10', 'Set van tien illustratiekaarten met envelop, gedrukt op gerecycled papier.', 995, '{}'::text[], 'mail', 'Boeken & papier', '{}'::text[], 'toggle', 0, true, true, true, 3
-from shops where slug = 'de-boekenhoek';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Kookboek ‘Winterfeest’', 'Feestelijke recepten voor de hele decembermaand, van ontbijt tot dessert.', 2995, '{}'::text[], 'cooking-pot', 'Boeken & papier', '{}'::text[], 'toggle', 0, false, true, true, 4
-from shops where slug = 'de-boekenhoek';
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'kempenaer'), 'de-boekenhoek', 'De Boekenhoek', 'Boeken, kaarten & leesplezier', 'Al ruim dertig jaar dé boekwinkel van het dorp. Wij pakken elk boek gratis in met een strik van goudlint en helpen je graag aan het perfecte leescadeau.', 'Boeken & papier', null, '#2f5d50', 'library', 'De Kempenaerstraat 12', '071-0000001', 'boekenhoek@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('boekenhoek@example.nl', 'De Boekenhoek') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'kempenaer'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'de-boekenhoek') from users u where lower(u.email) = lower('boekenhoek@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'de-boekenhoek'), 'Kerstverhalen voor bij de open haard', 'Een prachtig gebonden bundel met twaalf winterse verhalen van Nederlandse schrijvers. Ideaal om voor te lezen op kerstavond.', 2495, '{}'::text[], 'book-open', 'Boeken & papier', '{}'::text[], 'toggle', 0, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'de-boekenhoek'), 'Puzzel 1000 stukjes – Winters dorp', 'Een sfeervolle illustratie van een besneeuwde dorpsstraat. Voor lange winteravonden.', 1999, '{}'::text[], 'puzzle', 'Boeken & papier', '{}'::text[], 'count', 6, true, true, true, 1);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'de-boekenhoek'), 'Notitieboek linnen, goudfolie', 'Linnen notitieboek met goudfolie op de cover, 192 pagina''s met stippen.', 1650, '{}'::text[], 'notebook', 'Boeken & papier', '{}'::text[], 'count', 2, true, true, true, 2);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'de-boekenhoek'), 'Kerstkaarten set van 10', 'Set van tien illustratiekaarten met envelop, gedrukt op gerecycled papier.', 995, '{}'::text[], 'mail', 'Boeken & papier', '{}'::text[], 'toggle', 0, true, true, true, 3);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'de-boekenhoek'), 'Kookboek ‘Winterfeest’', 'Feestelijke recepten voor de hele decembermaand, van ontbijt tot dessert.', 2995, '{}'::text[], 'cooking-pot', 'Boeken & papier', '{}'::text[], 'toggle', 0, false, true, true, 4);
 
-insert into shops (slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
-values ('kaas-en-zo', 'Kaas & Zo', 'Delicatessen en kerstpakketten', 'Ambachtelijke kazen, lokale lekkernijen en de mooiste kerstpakketten op maat. Proeven mag altijd!', 'Eten & drinken', null, '#c9a24a', 'utensils', 'De Kempenaerstraat 21', '071-0000002', 'kaasenzo@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
-insert into users (email, name, role, shop_id) select 'kaasenzo@example.nl', 'Kaas & Zo', 'shop', id from shops where slug = 'kaas-en-zo';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Kerstpakket ‘Proeverij’', 'Vier ambachtelijke kazen, vijgenbrood, chutney en een fles huiswijn in een houten kistje.', 3995, '{}'::text[], 'gift', 'Eten & drinken', '{}'::text[], 'count', 8, true, true, true, 0
-from shops where slug = 'kaas-en-zo';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Truffelkaas 400 gram', 'Romige Goudse kaas met zwarte truffel, vers voor je gesneden aan de toonbank.', 1450, '{}'::text[], 'package', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, false, true, 1
-from shops where slug = 'kaas-en-zo';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Kaasplank eikenhout met messen', 'Robuuste kaasplank van Nederlands eikenhout met drie kaasmesjes.', 3495, '{}'::text[], 'utensils', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 2
-from shops where slug = 'kaas-en-zo';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Vijgenchutney', 'Huisgemaakte chutney van vijgen en port. Heerlijk bij oude kaas.', 695, '{}'::text[], 'glass-water', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 3
-from shops where slug = 'kaas-en-zo';
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'kempenaer'), 'kaas-en-zo', 'Kaas & Zo', 'Delicatessen en kerstpakketten', 'Ambachtelijke kazen, lokale lekkernijen en de mooiste kerstpakketten op maat. Proeven mag altijd!', 'Eten & drinken', null, '#c9a24a', 'utensils', 'De Kempenaerstraat 21', '071-0000002', 'kaasenzo@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('kaasenzo@example.nl', 'Kaas & Zo') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'kempenaer'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'kaas-en-zo') from users u where lower(u.email) = lower('kaasenzo@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'kaas-en-zo'), 'Kerstpakket ‘Proeverij’', 'Vier ambachtelijke kazen, vijgenbrood, chutney en een fles huiswijn in een houten kistje.', 3995, '{}'::text[], 'gift', 'Eten & drinken', '{}'::text[], 'count', 8, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'kaas-en-zo'), 'Truffelkaas 400 gram', 'Romige Goudse kaas met zwarte truffel, vers voor je gesneden aan de toonbank.', 1450, '{}'::text[], 'package', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, false, true, 1);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'kaas-en-zo'), 'Kaasplank eikenhout met messen', 'Robuuste kaasplank van Nederlands eikenhout met drie kaasmesjes.', 3495, '{}'::text[], 'utensils', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 2);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'kaas-en-zo'), 'Vijgenchutney', 'Huisgemaakte chutney van vijgen en port. Heerlijk bij oude kaas.', 695, '{}'::text[], 'glass-water', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 3);
 
-insert into shops (slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
-values ('studio-linde', 'Studio Linde', 'Woonaccessoires met een verhaal', 'Een conceptstore vol duurzame woonaccessoires, kaarsen en handgemaakte keramiek van Nederlandse makers.', 'Wonen & lifestyle', null, '#8c3b3b', 'flame', 'De Kempenaerstraat 30', '071-0000003', 'studiolinde@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
-insert into users (email, name, role, shop_id) select 'studiolinde@example.nl', 'Studio Linde', 'shop', id from shops where slug = 'studio-linde';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Geurkaars ‘Dennenbos’', 'Handgegoten sojawaskaars met de geur van dennennaalden en ceder. Brandtijd ±45 uur.', 2450, '{}'::text[], 'flame', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 0
-from shops where slug = 'studio-linde';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Keramiek mok, goudrand', 'Handgedraaide mok met een randje bladgoud. Ieder exemplaar is uniek.', 1995, '{}'::text[], 'coffee', 'Wonen & lifestyle', '{}'::text[], 'count', 4, true, true, true, 1
-from shops where slug = 'studio-linde';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Plaid wol, oker', 'Zachte plaid van gerecyclede wol in warm oker, 130x170 cm.', 7900, '{}'::text[], 'feather', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 2
-from shops where slug = 'studio-linde';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Kerstster messing', 'Minimalistische ster om in de boom of aan het raam te hangen.', 2995, '{}'::text[], 'star', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 3
-from shops where slug = 'studio-linde';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Vaasje ‘Ijsbloem’', 'Mondgeblazen glazen vaasje met een subtiele ijsbloem-textuur.', 3450, '{}'::text[], 'flower', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 4
-from shops where slug = 'studio-linde';
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'kempenaer'), 'studio-linde', 'Studio Linde', 'Woonaccessoires met een verhaal', 'Een conceptstore vol duurzame woonaccessoires, kaarsen en handgemaakte keramiek van Nederlandse makers.', 'Wonen & lifestyle', null, '#8c3b3b', 'flame', 'De Kempenaerstraat 30', '071-0000003', 'studiolinde@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('studiolinde@example.nl', 'Studio Linde') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'kempenaer'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'studio-linde') from users u where lower(u.email) = lower('studiolinde@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'studio-linde'), 'Geurkaars ‘Dennenbos’', 'Handgegoten sojawaskaars met de geur van dennennaalden en ceder. Brandtijd ±45 uur.', 2450, '{}'::text[], 'flame', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'studio-linde'), 'Keramiek mok, goudrand', 'Handgedraaide mok met een randje bladgoud. Ieder exemplaar is uniek.', 1995, '{}'::text[], 'coffee', 'Wonen & lifestyle', '{}'::text[], 'count', 4, true, true, true, 1);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'studio-linde'), 'Plaid wol, oker', 'Zachte plaid van gerecyclede wol in warm oker, 130x170 cm.', 7900, '{}'::text[], 'feather', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 2);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'studio-linde'), 'Kerstster messing', 'Minimalistische ster om in de boom of aan het raam te hangen.', 2995, '{}'::text[], 'star', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 3);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'studio-linde'), 'Vaasje ‘Ijsbloem’', 'Mondgeblazen glazen vaasje met een subtiele ijsbloem-textuur.', 3450, '{}'::text[], 'flower', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 4);
 
-insert into shops (slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
-values ('speelgoed-de-tol', 'Speelgoed De Tol', 'Houten speelgoed & spelletjes', 'Klassiek en duurzaam speelgoed voor groot en klein. Bij ons mag je alles even uitproberen.', 'Kinderen & speelgoed', null, '#b3262e', 'toy-brick', 'De Kempenaerstraat 37', '071-0000004', 'detol@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
-insert into users (email, name, role, shop_id) select 'detol@example.nl', 'Speelgoed De Tol', 'shop', id from shops where slug = 'speelgoed-de-tol';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Houten treinset', 'Klassieke houten trein met rails, brug en drie wagons. Vanaf 3 jaar.', 4995, '{}'::text[], 'train', 'Kinderen & speelgoed', '{}'::text[], 'count', 3, true, true, true, 0
-from shops where slug = 'speelgoed-de-tol';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Knuffel ijsbeer', 'Superzachte ijsbeer van 35 cm, wasbaar op 30 graden.', 2250, '{}'::text[], 'heart', 'Kinderen & speelgoed', '{}'::text[], 'toggle', 0, true, true, true, 1
-from shops where slug = 'speelgoed-de-tol';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Familiespel ‘Sneeuwballen’', 'Een razendsnel kaartspel voor 2–6 spelers vanaf 7 jaar.', 2795, '{}'::text[], 'dice', 'Kinderen & speelgoed', '{}'::text[], 'toggle', 0, true, true, true, 2
-from shops where slug = 'speelgoed-de-tol';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Knutselset kerstversiering', 'Maak je eigen vilten kersthangers. Inclusief naald, draad en patronen.', 1495, '{}'::text[], 'scissors', 'Kinderen & speelgoed', '{}'::text[], 'toggle', 0, true, true, true, 3
-from shops where slug = 'speelgoed-de-tol';
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'kempenaer'), 'speelgoed-de-tol', 'Speelgoed De Tol', 'Houten speelgoed & spelletjes', 'Klassiek en duurzaam speelgoed voor groot en klein. Bij ons mag je alles even uitproberen.', 'Kinderen & speelgoed', null, '#b3262e', 'toy-brick', 'De Kempenaerstraat 37', '071-0000004', 'detol@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('detol@example.nl', 'Speelgoed De Tol') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'kempenaer'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'speelgoed-de-tol') from users u where lower(u.email) = lower('detol@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'speelgoed-de-tol'), 'Houten treinset', 'Klassieke houten trein met rails, brug en drie wagons. Vanaf 3 jaar.', 4995, '{}'::text[], 'train', 'Kinderen & speelgoed', '{}'::text[], 'count', 3, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'speelgoed-de-tol'), 'Knuffel ijsbeer', 'Superzachte ijsbeer van 35 cm, wasbaar op 30 graden.', 2250, '{}'::text[], 'heart', 'Kinderen & speelgoed', '{}'::text[], 'toggle', 0, true, true, true, 1);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'speelgoed-de-tol'), 'Familiespel ‘Sneeuwballen’', 'Een razendsnel kaartspel voor 2–6 spelers vanaf 7 jaar.', 2795, '{}'::text[], 'dice', 'Kinderen & speelgoed', '{}'::text[], 'toggle', 0, true, true, true, 2);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'speelgoed-de-tol'), 'Knutselset kerstversiering', 'Maak je eigen vilten kersthangers. Inclusief naald, draad en patronen.', 1495, '{}'::text[], 'scissors', 'Kinderen & speelgoed', '{}'::text[], 'toggle', 0, true, true, true, 3);
 
-insert into shops (slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
-values ('bloem-en-blad', 'Bloem & Blad', 'Bloemen, kransen & kerstgroen', 'Seizoensbloemen, handgebonden kerstkransen en groen voor op tafel. We bezorgen ook in het dorp.', 'Bloemen & planten', null, '#3e7a4f', 'flower2', 'De Kempenaerstraat 44', '071-0000005', 'bloemenblad@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
-insert into users (email, name, role, shop_id) select 'bloemenblad@example.nl', 'Bloem & Blad', 'shop', id from shops where slug = 'bloem-en-blad';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Deurkrans ‘Winterbos’', 'Handgebonden krans van verse dennentakken, eucalyptus en gedroogde sinaasappel.', 3495, '{}'::text[], 'tree-pine', 'Bloemen & planten', '{}'::text[], 'count', 10, true, true, true, 0
-from shops where slug = 'bloem-en-blad';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Amaryllis in pot', 'Een rode amaryllis met bolletje in een zinken potje. Bloeit rond de kerst.', 1750, '{}'::text[], 'flower2', 'Bloemen & planten', '{}'::text[], 'toggle', 0, true, true, true, 1
-from shops where slug = 'bloem-en-blad';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Tafelstuk met kaars', 'Feestelijk tafelstuk met mos, kerstgroen en een witte stompkaars.', 2750, '{}'::text[], 'leaf', 'Bloemen & planten', '{}'::text[], 'toggle', 0, true, true, true, 2
-from shops where slug = 'bloem-en-blad';
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'kempenaer'), 'bloem-en-blad', 'Bloem & Blad', 'Bloemen, kransen & kerstgroen', 'Seizoensbloemen, handgebonden kerstkransen en groen voor op tafel. We bezorgen ook in het dorp.', 'Bloemen & planten', null, '#3e7a4f', 'flower2', 'De Kempenaerstraat 44', '071-0000005', 'bloemenblad@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('bloemenblad@example.nl', 'Bloem & Blad') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'kempenaer'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'bloem-en-blad') from users u where lower(u.email) = lower('bloemenblad@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'bloem-en-blad'), 'Deurkrans ‘Winterbos’', 'Handgebonden krans van verse dennentakken, eucalyptus en gedroogde sinaasappel.', 3495, '{}'::text[], 'tree-pine', 'Bloemen & planten', '{}'::text[], 'count', 10, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'bloem-en-blad'), 'Amaryllis in pot', 'Een rode amaryllis met bolletje in een zinken potje. Bloeit rond de kerst.', 1750, '{}'::text[], 'flower2', 'Bloemen & planten', '{}'::text[], 'toggle', 0, true, true, true, 1);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'bloem-en-blad'), 'Tafelstuk met kaars', 'Feestelijk tafelstuk met mos, kerstgroen en een witte stompkaars.', 2750, '{}'::text[], 'leaf', 'Bloemen & planten', '{}'::text[], 'toggle', 0, true, true, true, 2);
 
-insert into shops (slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
-values ('atelier-goudsmid', 'Atelier Goudsmid', 'Sieraden, handgemaakt in het dorp', 'In ons atelier achter de winkel maken we sieraden van gerecycled goud en zilver. Graveren doen we ter plekke.', 'Mode & sieraden', null, '#a8812f', 'gem', 'De Kempenaerstraat 51', '071-0000006', 'goudsmid@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
-insert into users (email, name, role, shop_id) select 'goudsmid@example.nl', 'Atelier Goudsmid', 'shop', id from shops where slug = 'atelier-goudsmid';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Ketting ‘Sneeuwvlok’ zilver', 'Fijne zilveren ketting met handgezaagde sneeuwvlok-hanger.', 8900, '{}'::text[], 'snowflake', 'Mode & sieraden', '{}'::text[], 'count', 5, true, true, true, 0
-from shops where slug = 'atelier-goudsmid';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Oorbellen goud, druppel', '14 karaat gouden oorbellen van gerecycled goud.', 12900, '{}'::text[], 'sparkles', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 1
-from shops where slug = 'atelier-goudsmid';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Ring met graveerruimte', 'Zilveren ring; we graveren gratis een naam of datum terwijl je wacht.', 6900, '{}'::text[], 'gem', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 2
-from shops where slug = 'atelier-goudsmid';
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'kempenaer'), 'atelier-goudsmid', 'Atelier Goudsmid', 'Sieraden, handgemaakt in het dorp', 'In ons atelier achter de winkel maken we sieraden van gerecycled goud en zilver. Graveren doen we ter plekke.', 'Mode & sieraden', null, '#a8812f', 'gem', 'De Kempenaerstraat 51', '071-0000006', 'goudsmid@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('goudsmid@example.nl', 'Atelier Goudsmid') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'kempenaer'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'atelier-goudsmid') from users u where lower(u.email) = lower('goudsmid@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'atelier-goudsmid'), 'Ketting ‘Sneeuwvlok’ zilver', 'Fijne zilveren ketting met handgezaagde sneeuwvlok-hanger.', 8900, '{}'::text[], 'snowflake', 'Mode & sieraden', '{}'::text[], 'count', 5, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'atelier-goudsmid'), 'Oorbellen goud, druppel', '14 karaat gouden oorbellen van gerecycled goud.', 12900, '{}'::text[], 'sparkles', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 1);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'atelier-goudsmid'), 'Ring met graveerruimte', 'Zilveren ring; we graveren gratis een naam of datum terwijl je wacht.', 6900, '{}'::text[], 'gem', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 2);
 
-insert into shops (slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
-values ('koffiebar-hazelaar', 'Koffiebar Hazelaar', 'Koffie, thee & lekkers', 'Zelfgebrande bonen, losse thee en de lekkerste kerstkoekjes. Drink ook een warme chocomel tijdens het shoppen!', 'Eten & drinken', null, '#6b4a34', 'coffee', 'De Kempenaerstraat 58', '071-0000007', 'hazelaar@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, false, true);
-insert into users (email, name, role, shop_id) select 'hazelaar@example.nl', 'Koffiebar Hazelaar', 'shop', id from shops where slug = 'koffiebar-hazelaar';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Kerstblend koffiebonen 250 g', 'Onze eigen kerstmelange met tonen van kaneel en pure chocolade.', 1195, '{}'::text[], 'coffee', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 0
-from shops where slug = 'koffiebar-hazelaar';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Theedoos ‘Winteravond’', 'Drie losse theesoorten in een mooi blik, met theezeefje.', 1850, '{}'::text[], 'coffee', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 1
-from shops where slug = 'koffiebar-hazelaar';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Kerstkoekjestrommel', 'Trommel vol zelfgebakken kruidnoten, sterretjes en roomboterkransjes.', 1295, '{}'::text[], 'cookie', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 2
-from shops where slug = 'koffiebar-hazelaar';
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'kempenaer'), 'koffiebar-hazelaar', 'Koffiebar Hazelaar', 'Koffie, thee & lekkers', 'Zelfgebrande bonen, losse thee en de lekkerste kerstkoekjes. Drink ook een warme chocomel tijdens het shoppen!', 'Eten & drinken', null, '#6b4a34', 'coffee', 'De Kempenaerstraat 58', '071-0000007', 'hazelaar@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, false, true);
+insert into users (email, name) values ('hazelaar@example.nl', 'Koffiebar Hazelaar') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'kempenaer'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'koffiebar-hazelaar') from users u where lower(u.email) = lower('hazelaar@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'koffiebar-hazelaar'), 'Kerstblend koffiebonen 250 g', 'Onze eigen kerstmelange met tonen van kaneel en pure chocolade.', 1195, '{}'::text[], 'coffee', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'koffiebar-hazelaar'), 'Theedoos ‘Winteravond’', 'Drie losse theesoorten in een mooi blik, met theezeefje.', 1850, '{}'::text[], 'coffee', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 1);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'koffiebar-hazelaar'), 'Kerstkoekjestrommel', 'Trommel vol zelfgebakken kruidnoten, sterretjes en roomboterkransjes.', 1295, '{}'::text[], 'cookie', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 2);
 
-insert into shops (slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
-values ('mode-merel', 'Mode Merel', 'Dames- en herenmode', 'Warme truien, zachte sjaals en feestelijke outfits. Persoonlijk advies en gratis cadeauverpakking.', 'Mode & sieraden', null, '#1f3b5c', 'shirt', 'De Kempenaerstraat 63', '071-0000008', 'merel@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
-insert into users (email, name, role, shop_id) select 'merel@example.nl', 'Mode Merel', 'shop', id from shops where slug = 'mode-merel';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Sjaal kasjmier, bordeaux', 'Heerlijk zachte sjaal van 100% kasjmier in diep bordeaux.', 6995, '{}'::text[], 'shirt', 'Mode & sieraden', '{}'::text[], 'count', 7, true, true, true, 0
-from shops where slug = 'mode-merel';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Gebreide muts met pompon', 'Wollen muts met een pompon van imitatiebont.', 2995, '{}'::text[], 'feather', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 1
-from shops where slug = 'mode-merel';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Handschoenen leer', 'Leren handschoenen met kasjmier voering, dames en heren.', 4995, '{}'::text[], 'handbag', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 2
-from shops where slug = 'mode-merel';
-insert into products (shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
-select id, 'Kerstsokken giftbox', 'Drie paar vrolijke kerstsokken in een cadeaudoos.', 1995, '{}'::text[], 'gift', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 3
-from shops where slug = 'mode-merel';
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'kempenaer'), 'mode-merel', 'Mode Merel', 'Dames- en herenmode', 'Warme truien, zachte sjaals en feestelijke outfits. Persoonlijk advies en gratis cadeauverpakking.', 'Mode & sieraden', null, '#1f3b5c', 'shirt', 'De Kempenaerstraat 63', '071-0000008', 'merel@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('merel@example.nl', 'Mode Merel') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'kempenaer'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'mode-merel') from users u where lower(u.email) = lower('merel@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'mode-merel'), 'Sjaal kasjmier, bordeaux', 'Heerlijk zachte sjaal van 100% kasjmier in diep bordeaux.', 6995, '{}'::text[], 'shirt', 'Mode & sieraden', '{}'::text[], 'count', 7, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'mode-merel'), 'Gebreide muts met pompon', 'Wollen muts met een pompon van imitatiebont.', 2995, '{}'::text[], 'feather', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 1);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'mode-merel'), 'Handschoenen leer', 'Leren handschoenen met kasjmier voering, dames en heren.', 4995, '{}'::text[], 'handbag', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 2);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'kempenaer'), (select id from shops where area_id = (select id from areas where slug = 'kempenaer') and slug = 'mode-merel'), 'Kerstsokken giftbox', 'Drie paar vrolijke kerstsokken in een cadeaudoos.', 1995, '{}'::text[], 'gift', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 3);
 
--- Beheerder (wachtwoord als bcrypt-hash; wijzig het na de eerste keer inloggen).
-insert into users (email, name, role, password_hash) values ('lgawi@connect-create.nl', 'Beheerder', 'admin', '$2a$12$cqzvofNWNZULQZ75KqPusOaN4rg8Wa6ZgsF0AQ3NoNuz.rdoWlUva');
+-- ===== Winkelgebied: Mijdrecht Centrum =====
+insert into areas (slug, name) values ('mijdrecht', 'Mijdrecht Centrum');
+insert into area_domains (domain, area_id) values ('shoppenmijdrecht.nl', (select id from areas where slug = 'mijdrecht')) on conflict do nothing;
+insert into area_domains (domain, area_id) values ('shoppenmijdrecht.nl', (select id from areas where slug = 'mijdrecht')) on conflict do nothing;
+update area_settings set
+  site_name = 'Windowshoppen', area_name = 'Mijdrecht Centrum', town = 'Mijdrecht',
+  hero_title = 'Kerstshoppen in Mijdrecht Centrum', hero_subtitle = 'Ontdek de kadotips van de winkels in het centrum, maak je lijstje en haal je cadeaus op in het dorp.',
+  intro_text = 'De winkeliers van Mijdrecht Centrum zetten deze december hun mooiste kadotips online. Zet ze op je lijstje, laat ze een dag reserveren en haal ze op in de winkel.', footer_text = 'Een initiatief van de winkeliers van Mijdrecht Centrum.',
+  campaign_start = '2026-11-20', campaign_end = '2026-12-31',
+  max_products_per_shop = 20, reservation_hours = 24,
+  reservations_enabled = true, snow_enabled = true, map = '{"lat":52.2063,"lng":4.864,"zoom":17}'::jsonb,
+  colors = '{"primary":"#1d3557","accent":"#c8102e","gold":"#d4a24c","background":"#f6f7fb","text":"#1d2230"}'::jsonb, brand = '{"logo":null,"mark":null,"favicon":null}'::jsonb, categories = array['Boeken & papier', 'Eten & drinken', 'Wonen & lifestyle', 'Kinderen & speelgoed', 'Mode & sieraden', 'Overig']::text[], privacy = '{"controllerName":"Ondernemersvereniging Mijdrecht Centrum","controllerAddress":"Dorpsstraat, Mijdrecht","contactEmail":"privacy@example.nl","kvk":"00000000","retentionDays":30}'::jsonb,
+  updated_at = now()
+where area_id = (select id from areas where slug = 'mijdrecht');
+
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'mijdrecht'), 'bakkerij-de-veenmolen', 'Bakkerij De Veenmolen', 'Ambachtelijk brood & kerstbrood', 'Al drie generaties bakken we elke nacht vers. In december staat de winkel vol kerststollen en banketletters.', 'Eten & drinken', null, '#7a4b2a', 'croissant', 'Dorpsstraat 18', '0297-000001', 'veenmolen@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"18:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('veenmolen@example.nl', 'Bakkerij De Veenmolen') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'mijdrecht'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'mijdrecht') and slug = 'bakkerij-de-veenmolen') from users u where lower(u.email) = lower('veenmolen@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'mijdrecht'), (select id from shops where area_id = (select id from areas where slug = 'mijdrecht') and slug = 'bakkerij-de-veenmolen'), 'Kerststol met spijs', 'Rijk gevulde stol met amandelspijs, rozijnen en sukade.', 1295, '{}'::text[], 'wheat', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'mijdrecht'), (select id from shops where area_id = (select id from areas where slug = 'mijdrecht') and slug = 'bakkerij-de-veenmolen'), 'Banketletter naar keuze', 'Met de hand gerolde banketletter met echte roomboter.', 850, '{}'::text[], 'cookie', 'Eten & drinken', '{}'::text[], 'toggle', 0, true, true, true, 1);
+
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'mijdrecht'), 'boekhandel-het-plein', 'Boekhandel Het Plein', 'Boeken, spellen & papierwaren', 'De gezelligste boekhandel van Mijdrecht, met een grote kinderhoek en altijd een goed leesadvies.', 'Boeken & papier', null, '#1d3557', 'library', 'Dorpsstraat 31', '0297-000002', 'hetplein@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('hetplein@example.nl', 'Boekhandel Het Plein') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'mijdrecht'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'mijdrecht') and slug = 'boekhandel-het-plein') from users u where lower(u.email) = lower('hetplein@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'mijdrecht'), (select id from shops where area_id = (select id from areas where slug = 'mijdrecht') and slug = 'boekhandel-het-plein'), 'Spel ‘Winterdorp’', 'Coöperatief bordspel voor de hele familie, vanaf 8 jaar.', 3250, '{}'::text[], 'dice', 'Boeken & papier', '{}'::text[], 'count', 4, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'mijdrecht'), (select id from shops where area_id = (select id from areas where slug = 'mijdrecht') and slug = 'boekhandel-het-plein'), 'Prentenboek ‘De sneeuwuil’', 'Een warm voorleesverhaal voor de feestdagen.', 1599, '{}'::text[], 'book-open', 'Boeken & papier', '{}'::text[], 'toggle', 0, true, true, true, 1);
+
+insert into shops (area_id, slug, name, tagline, bio, category, logo_url, cover_color, icon, address, phone, email, website, instagram, opening_hours, lat, lng, allow_reservations, active)
+values ((select id from areas where slug = 'mijdrecht'), 'wonen-aan-de-vaart', 'Wonen aan de Vaart', 'Interieur & cadeaus', 'Sfeervolle woonaccessoires, kaarsen en cadeaus voor elk budget.', 'Wonen & lifestyle', null, '#2a6f6a', 'sofa', 'Dorpsstraat 44', '0297-000003', 'aandevaart@example.nl', '', '', '[{"day":0,"open":null,"close":null},{"day":1,"open":"13:00","close":"18:00"},{"day":2,"open":"09:30","close":"18:00"},{"day":3,"open":"09:30","close":"18:00"},{"day":4,"open":"09:30","close":"18:00"},{"day":5,"open":"09:30","close":"21:00"},{"day":6,"open":"09:30","close":"17:00"}]'::jsonb, null, null, true, true);
+insert into users (email, name) values ('aandevaart@example.nl', 'Wonen aan de Vaart') on conflict do nothing;
+insert into memberships (user_id, area_id, role, shop_id)
+select u.id, (select id from areas where slug = 'mijdrecht'), 'shop', (select id from shops where area_id = (select id from areas where slug = 'mijdrecht') and slug = 'wonen-aan-de-vaart') from users u where lower(u.email) = lower('aandevaart@example.nl');
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'mijdrecht'), (select id from shops where area_id = (select id from areas where slug = 'mijdrecht') and slug = 'wonen-aan-de-vaart'), 'Kerstster van rotan', 'Natuurlijke ster om voor het raam te hangen.', 2295, '{}'::text[], 'star', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 0);
+insert into products (area_id, shop_id, title, description, price_cents, images, icon, category, tags, stock_mode, stock, in_stock, reservable, active, sort_order)
+values ((select id from areas where slug = 'mijdrecht'), (select id from shops where area_id = (select id from areas where slug = 'mijdrecht') and slug = 'wonen-aan-de-vaart'), 'Geurkaars ‘Winteravond’', 'Geurkaars met kaneel en sinaasappel, brandtijd ±35 uur.', 1850, '{}'::text[], 'flame', 'Wonen & lifestyle', '{}'::text[], 'toggle', 0, true, true, true, 1);
+
+-- Superadmin(s): beheer van alle winkelgebieden (wachtwoord als bcrypt-hash; wijzig het na de eerste keer inloggen).
+insert into users (email, name, is_super_admin, password_hash) values ('lgawi@connect-create.nl', 'Superadmin', true, '$2a$12$ckXZBNJO4FMxjRrlovX2UOdTQXxJg5HiFmzInniMQ51bq4srE1Zza')
+  on conflict ((lower(email))) do update set is_super_admin = true, password_hash = excluded.password_hash;
 
 commit;

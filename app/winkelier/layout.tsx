@@ -8,6 +8,7 @@ import { sessionActions, useDB, useHydrated } from "@/lib/store"
 import { ShopLogo } from "@/components/Visuals"
 import { inputCls } from "@/components/forms"
 import { cn } from "@/lib/utils"
+import { AreaMark } from "@/components/AreaBrand"
 import { useCurrentShop } from "./useShop"
 
 export default function ShopkeeperLayout({ children }: { children: React.ReactNode }) {
@@ -112,8 +113,7 @@ function Login() {
   return (
     <div className="starry flex min-h-dvh flex-col items-center justify-center bg-primary px-4 py-10">
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/kempenaer-crest.svg" alt="" className="mx-auto h-12 w-auto rounded-lg bg-primary p-2" />
+        <AreaMark framed className="mx-auto h-12 text-[48px]" />
         <h1 className="mt-2 text-center font-display text-2xl font-semibold text-primary">Inloggen winkelier</h1>
         <p className="text-center text-sm text-stone-500">
           {db.settings.siteName} {db.settings.areaName}

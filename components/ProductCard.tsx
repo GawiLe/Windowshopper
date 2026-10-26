@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { Check, Plus } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import { listActions, useHydrated, useList } from "@/lib/store"
 import type { Product, Shop } from "@/lib/types"
 import { cn, euro, isAvailable, stockLabel } from "@/lib/utils"
@@ -57,7 +58,7 @@ export function ProductCard({ product, shop, showShop = true }: { product: Produ
   return (
     <Link
       href={`/product/${product.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition hover:shadow-lg"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition hover:shadow-lg"
     >
       <div className={cn("relative aspect-square overflow-hidden", !available && "opacity-60 grayscale-[40%]")}>
         <ProductImage product={product} color={shop?.coverColor} className="transition duration-500 group-hover:scale-105" />
@@ -93,13 +94,60 @@ export function ProductGrid({ children, className }: { children: React.ReactNode
 
 /** Horizontale scroll-rij, fijn op de telefoon */
 export function ProductRow({ products, shops }: { products: Product[]; shops: Shop[] }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState({ left: false, right: false })
+
+  const update = useCallback(() => {
+    const el = ref.current
+    if (!el) return
+    setEdges({ left: el.scrollLeft > 8, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 8 })
+  }, [])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [update, products.length])
+
+  const scroll = (dir: -1 | 1) => {
+    const el = ref.current
+    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" })
+  }
+
   return (
-    <div className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
-      {products.map((p) => (
-        <div key={p.id} className="w-[44%] shrink-0 snap-start sm:w-56">
-          <ProductCard product={p} shop={shops.find((s) => s.id === p.shopId)} />
-        </div>
-      ))}
+    <div className="relative">
+      <div
+        ref={ref}
+        onScroll={update}
+        className="scrollbar-none -mx-4 flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 sm:gap-4"
+      >
+        {products.map((p) => (
+          <div key={p.id} className="w-[44%] shrink-0 snap-start sm:w-56 lg:w-60">
+            <ProductCard product={p} shop={shops.find((s) => s.id === p.shopId)} />
+          </div>
+        ))}
+      </div>
+      {edges.left && <RowArrow dir={-1} onClick={() => scroll(-1)} />}
+      {edges.right && <RowArrow dir={1} onClick={() => scroll(1)} />}
     </div>
+  )
+}
+
+function RowArrow({ dir, onClick }: { dir: -1 | 1; onClick: () => void }) {
+  const Icon = dir === -1 ? ChevronLeft : ChevronRight
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={dir === -1 ? "Vorige producten" : "Volgende producten"}
+      className={cn(
+        "absolute top-[30%] z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-primary shadow-lg ring-1 ring-black/10 transition hover:bg-primary hover:text-white",
+        dir === -1 ? "-left-2 sm:-left-4" : "-right-2 sm:-right-4",
+      )}
+    >
+      <Icon className="h-5 w-5" />
+    </button>
   )
 }

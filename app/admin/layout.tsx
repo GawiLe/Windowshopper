@@ -3,10 +3,11 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
-import { ExternalLink, Gift, LayoutDashboard, LogOut, Mail, Settings, ShoppingBag, Store } from "lucide-react"
+import { Crown, ExternalLink, Gift, LayoutDashboard, LogOut, Mail, Settings, ShoppingBag, Store } from "lucide-react"
 import { sessionActions, useDB, useHydrated, useSession } from "@/lib/store"
 import { inputCls } from "@/components/forms"
 import { cn } from "@/lib/utils"
+import { AreaMark } from "@/components/AreaBrand"
 
 const NAV = [
   { href: "/admin", label: "Overzicht", icon: LayoutDashboard },
@@ -32,9 +33,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-dvh bg-stone-50 md:flex">
       <aside className="sticky top-0 z-30 bg-primary text-white md:h-dvh md:w-60 md:shrink-0">
         <div className="flex items-center justify-between px-4 py-3 md:block md:py-6">
-          <div>
+          <div className="min-w-0">
             <p className="font-display text-lg font-semibold">Beheer</p>
-            <p className="gold-text text-xs font-bold uppercase tracking-widest">{db.settings.siteName}</p>
+            <p className="truncate text-xs font-medium uppercase tracking-widest text-gold">{db.settings.areaName}</p>
           </div>
           <div className="flex gap-1 md:mt-4">
             <Link href="/" target="_blank" className="flex h-9 items-center gap-1 rounded-lg bg-white/10 px-3 text-xs font-bold">
@@ -59,6 +60,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Link>
           ))}
         </nav>
+        {session.isSuper && (
+          <Link
+            href="/superadmin"
+            className="mx-3 mb-3 flex items-center gap-2 rounded-xl bg-black/20 px-3 py-2.5 text-sm font-semibold text-gold md:mt-4"
+          >
+            <Crown className="h-4 w-4" /> Alle winkelgebieden
+          </Link>
+        )}
         <div className="gold-line md:hidden" />
       </aside>
       <main className="mx-auto w-full max-w-4xl px-4 pb-24 pt-6 md:px-8">{children}</main>
@@ -67,6 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 }
 
 function AdminLogin() {
+  const db = useDB()
   const [email, setEmail] = useState("")
   const [pw, setPw] = useState("")
   const [err, setErr] = useState("")
@@ -82,9 +92,8 @@ function AdminLogin() {
         }}
         className="w-full max-w-sm space-y-4 rounded-3xl bg-white p-6 shadow-2xl"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/kempenaer-crest.svg" alt="" className="mx-auto h-12 w-auto rounded-lg bg-primary p-2" />
-        <h1 className="text-center font-display text-2xl font-semibold text-primary">Beheerder</h1>
+        <AreaMark framed className="mx-auto h-12 text-[48px]" />
+        <h1 className="text-center font-display text-2xl font-semibold text-primary">Beheer {db.settings.areaName}</h1>
         <input type="email" inputMode="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mailadres" className={inputCls} autoFocus required />
         <input type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Wachtwoord" className={inputCls} required />
         {err && <p className="text-sm font-semibold text-accent">{err}</p>}

@@ -127,19 +127,49 @@ export interface SiteSettings {
     kvk: string
     retentionDays: number
   }
-  /** beheerder: e-mail + SHA-256-hash van het wachtwoord (demo). Live: bcrypt in users.password_hash */
-  adminEmail: string
-  adminPasswordHash: string
+  /** logo's van het winkelgebied (URL of data-URL); goed zichtbaar op de hoofdkleur */
+  brand: {
+    logo: string | null // volledig logo (footer)
+    mark: string | null // klein beeldmerk (menubalk)
+    favicon: string | null // icoontje in het browsertabblad
+  }
   updatedAt: string
 }
 
+/** Beheerder (van één winkelgebied, of superadmin). Wachtwoord alleen als hash. */
+export interface AdminAccount {
+  id: ID
+  email: string
+  name: string
+  passwordHash: string // demo: SHA-256; live: bcrypt in users.password_hash
+  createdAt: string
+}
+
+/** Alle gegevens van één winkelgebied. Gegevens van verschillende gebieden raken elkaar nooit. */
 export interface Database {
-  version: number
   settings: SiteSettings
   shops: Shop[]
   products: Product[]
   reservations: Reservation[]
   emails: EmailLog[]
+}
+
+/** Een winkelgebied (tenant) met eigen domeinen en beheerders. */
+export interface Area extends Database {
+  id: ID
+  slug: string
+  /** domeinnamen waarop dit gebied draait, bv. ["shoppenkempenaer.nl", "www.shoppenkempenaer.nl"] */
+  domains: string[]
+  admins: AdminAccount[]
+  active: boolean
+  createdAt: string
+}
+
+/** Het hele platform: alle winkelgebieden + superadmins. */
+export interface Platform {
+  version: number
+  areas: Area[]
+  superAdmins: AdminAccount[]
 }
 
 /** Wat een bezoeker op zijn lijstje heeft. Leeft alleen in de browser / in een deel-link. */

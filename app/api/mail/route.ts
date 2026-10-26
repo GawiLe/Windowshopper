@@ -48,9 +48,15 @@ export async function POST(req: Request) {
     gold: HEX.test(input.brand?.gold ?? "") ? input.brand!.gold! : "#c9a24a",
   }
 
+  // Afzender per winkelgebied: MAIL_FROM="Windowshoppen <kado@{domain}>" wordt bv. kado@shoppenkempenaer.nl.
+  // Elk domein moet dan in Resend geverifieerd zijn.
+  const host = (req.headers.get("x-ws-host") ?? req.headers.get("host") ?? "").replace(/:\d+$/, "").replace(/^www\./, "")
+  const fromTemplate = process.env.MAIL_FROM ?? "Windowshoppen <onboarding@resend.dev>"
+  const from = fromTemplate.includes("{domain}") ? fromTemplate.replace("{domain}", /^[a-z0-9.-]+\.[a-z]{2,}$/.test(host) ? host : "resend.dev") : fromTemplate
+
   const resend = new Resend(key)
   const { data, error } = await resend.emails.send({
-    from: process.env.MAIL_FROM ?? "Windowshoppen <onboarding@resend.dev>",
+    from,
     to: [to],
     subject,
     text: body,

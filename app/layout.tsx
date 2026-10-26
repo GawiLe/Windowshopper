@@ -9,14 +9,13 @@ const body = Jost({ subsets: ["latin"], variable: "--font-body", display: "swap"
 
 export const metadata: Metadata = {
   title: {
-    default: "Windowshoppen De Kempenaer – kadotips voor december",
-    template: "%s · Windowshoppen De Kempenaer",
+    default: "Windowshoppen – kadotips voor december",
+    template: "%s · Windowshoppen",
   },
   description:
-    "De online winkelstraat van winkelgebied De Kempenaer in Oegstgeest. Ontdek kadotips van lokale winkels, maak je kadolijstje en haal je cadeaus op in het dorp.",
+    "De online winkelstraat van je winkelgebied. Ontdek kadotips van lokale winkels, maak je kadolijstje en haal je cadeaus op in de winkel.",
   applicationName: "Windowshoppen",
   appleWebApp: { capable: true, title: "Windowshoppen", statusBarStyle: "default" },
-  icons: { icon: "/brand/kempenaer-logo.svg", apple: "/brand/kempenaer-logo.svg" },
 }
 
 export const viewport: Viewport = {

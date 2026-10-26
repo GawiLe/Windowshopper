@@ -2,7 +2,9 @@
 
 import Link from "next/link"
 import { ArrowRight, CalendarCheck, Gift, ListChecks, MapPinned, Snowflake, Store } from "lucide-react"
-import { useDB } from "@/lib/store"
+import { useState } from "react"
+import { useDB, useHydrated } from "@/lib/store"
+import type { Product } from "@/lib/types"
 import { visibleProducts, visibleShops } from "@/lib/selectors"
 import { ProductCard, ProductRow } from "@/components/ProductCard"
 import { Ornament, ProductImage, ShopLogo } from "@/components/Visuals"
@@ -12,6 +14,8 @@ import { euro, formatDate } from "@/lib/utils"
 
 export default function HomePage() {
   const db = useDB()
+  const hydrated = useHydrated()
+  const [seed] = useState(() => Math.random())
   const { settings } = db
   const shops = visibleShops(db)
   const products = visibleProducts(db)
@@ -19,7 +23,8 @@ export default function HomePage() {
   const featured = shops
     .map((s) => products.filter((p) => p.shopId === s.id).sort((a, b) => a.sortOrder - b.sortOrder)[0])
     .filter(Boolean)
-  const collage = featured.slice(0, 3)
+  // elke keer dat de pagina opent drie willekeurige producten, van verschillende winkels
+  const collage = hydrated ? pickRandom(products, seed) : []
   const usedCats = settings.categories.filter((c) => products.some((p) => p.category === c))
   const words = settings.heroTitle.split(" ")
   const goldFrom = Math.max(0, words.length - 2)
@@ -83,8 +88,10 @@ export default function HomePage() {
 
           {/* etalage-collage, alleen vanaf tablet */}
           <div className="relative hidden h-[440px] md:block">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/kempenaer-crest.svg" alt="" className="absolute left-1/2 top-1/2 w-[80%] -translate-x-1/2 -translate-y-1/2 opacity-10" />
+            {settings.brand.mark && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={settings.brand.mark} alt="" className="absolute left-1/2 top-1/2 w-[80%] -translate-x-1/2 -translate-y-1/2 opacity-10" />
+            )}
             {collage.map((p, i) => {
               const shop = shops.find((s) => s.id === p.shopId)!
               const pos = [
@@ -238,4 +245,15 @@ function SectionTitle({ title, sub, href, linkText = "Bekijk alles" }: { title: 
       </Link>
     </div>
   )
+}
+
+/** Kies 3 producten in willekeurige volgorde, liefst van 3 verschillende winkels. */
+function pickRandom(products: Product[], seed: number): Product[] {
+  let x = Math.floor(seed * 2 ** 31) || 1
+  const rand = () => ((x = (x * 48271) % 2147483647) / 2147483647)
+  const shuffled = products.map((p) => ({ p, r: rand() })).sort((a, b) => a.r - b.r).map((e) => e.p)
+  const out: Product[] = []
+  for (const p of shuffled) if (out.length < 3 && !out.some((o) => o.shopId === p.shopId)) out.push(p)
+  for (const p of shuffled) if (out.length < 3 && !out.includes(p)) out.push(p)
+  return out
 }

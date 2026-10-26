@@ -1,8 +1,10 @@
-# Windowshoppen – Winkelgebied De Kempenaer
+# Windowshoppen
 
-Een feestelijke, mobiel-first multi-winkel webshop voor de decembermaand. Winkeliers uit één
-winkelgebied plaatsen elk maximaal 20 kadotips; bezoekers windowshoppen door de online straat,
-maken zonder account een kadolijstje, laten producten een dag reserveren en halen ze op in het dorp.
+Een feestelijke, mobiel-first kerstwebshop voor **meerdere winkelgebieden** (multi-tenant), elk op een
+eigen domein, bijvoorbeeld `shoppenkempenaer.nl` (De Kempenaer, Oegstgeest) en `shoppenmijdrecht.nl`.
+Winkeliers plaatsen elk maximaal 20 kadotips; bezoekers windowshoppen door de online straat, maken
+zonder account een kadolijstje, laten producten een dag reserveren en halen ze op in de winkel.
+Gegevens van verschillende winkelgebieden zijn volledig van elkaar gescheiden.
 
 ## Starten op je laptop
 Nodig: [Node.js](https://nodejs.org) versie 20 of hoger (LTS).
@@ -27,7 +29,11 @@ Mails echt versturen? Maak een bestand `.env.local` (zie `.env.example`) met `RE
 |---|---|---|
 | Bezoeker | `/` | geen account nodig |
 | Winkelier | `/winkelier` | kies winkel + code (bv. De Boekenhoek → `boek2026`; alle codes staan op het inlogscherm) |
-| Beheerder | `/admin` | `lgawi@connect-create.nl` + het afgesproken wachtwoord (wijzigen via Instellingen) |
+| Beheerder van een gebied | `/admin` | aan te maken door de superadmin (of door een andere beheerder van dat gebied) |
+| Superadmin (alle gebieden) | `/superadmin` | `lgawi@connect-create.nl` + het afgesproken wachtwoord (werkt ook op `/admin` van elk gebied) |
+
+Op localhost wissel je van winkelgebied met de keuzelijst onderaan de site of met `?gebied=kempenaer` /
+`?gebied=mijdrecht`. Op een echt domein zie je alleen het gebied van dat domein.
 
 > De demo bewaart alles in de browser (localStorage). Mails gaan via [Resend](https://resend.com)
 > zodra `RESEND_API_KEY` (en `MAIL_FROM`) in `.env.local` staan; zonder sleutel verschijnen ze alleen
@@ -54,10 +60,15 @@ Mails echt versturen? Maak een bestand `.env.local` (zie `.env.example`) met `RE
 - Reserveringen per ophaaldag, met zoeken; "Opgehaald" afvinken, bellen/mailen, annuleren
 - Eigen winkelprofiel: logo, bio, contact, openingstijden
 
-**Beheer** (`/admin`)
+**Superadmin** (`/superadmin`)
+- Winkelgebieden aanmaken, wijzigen, uitzetten en verwijderen; domeinen koppelen
+- Per gebied één of meer beheerders aanstellen; andere superadmins toevoegen
+- Direct naar het beheer of de site van elk gebied
+
+**Beheer per winkelgebied** (`/admin`)
 - Winkels toevoegen, wijzigen, verwijderen, op de kaart plaatsen (adres opzoeken of op de kaart tikken), meekijken als winkelier
 - Alle producten modereren, alle reserveringen, verstuurde mails
-- Instellingen: teksten, kleuren (met thema's, live), sneeuw aan/uit, actieperiode, max. producten,
+- Instellingen: logo, beeldmerk en favicon, teksten, kleuren (met thema's, live), sneeuw aan/uit, actieperiode, max. producten,
   reserveringsduur, categorieën, privacygegevens, export/import, opschonen persoonsgegevens
 
 ## Techniek
@@ -66,10 +77,11 @@ Next.js (App Router) · React · Tailwind CSS v4 · lucide-react · Leaflet. Hui
 ```
 app/(shop)/        publieke webshop (home, winkelstraat, product, winkel, kaart, lijstje, reserveren, privacy)
 app/winkelier/     winkeliersomgeving
-app/admin/         beheeromgeving
+app/admin/         beheeromgeving per winkelgebied
+app/superadmin/    beheer van alle winkelgebieden
 components/        UI-componenten (kaart, productkaart, formulieren, iconen, sneeuw)
 lib/               types, demo-store, seed-data, e-mailtemplates, helpers
-db/                Neon/Postgres-schema (triggers, reserveerfunctie, opschonen) + seed
-scripts/           generator voor db/seed.sql
+db/                Neon/Postgres-schema (gebieden, RLS, triggers, reserveerfunctie, opschonen) + seed
+scripts/           generator voor db/seed.sql en test van de scheiding tussen gebieden (npm run db:test)
 docs/              stappenplan naar live
 ```

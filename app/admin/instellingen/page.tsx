@@ -2,12 +2,12 @@
 
 import { useState } from "react"
 import { Download, RotateCcw, ShieldCheck, Upload, X } from "lucide-react"
-import { actions, getDB, useDB } from "@/lib/store"
+import { actions, getDB, useDB, useIsSuper } from "@/lib/store"
 import type { Database, SiteSettings } from "@/lib/types"
-import { Field, inputCls, Switch } from "@/components/forms"
+import { BrandImagePicker, Field, inputCls, Switch } from "@/components/forms"
 import { toast } from "@/components/Toast"
-import { cn, isValidEmail } from "@/lib/utils"
-import { hashPassword } from "@/lib/password"
+import { AreaAdminManager, ChangeOwnPassword } from "@/components/AdminManager"
+import { cn } from "@/lib/utils"
 import { Card, PageTitle } from "../ui"
 
 const PRESETS: { name: string; colors: SiteSettings["colors"] }[] = [
@@ -28,6 +28,7 @@ const COLOR_FIELDS: { key: keyof SiteSettings["colors"]; label: string }[] = [
 
 export default function SettingsPage() {
   const db = useDB()
+  const isSuper = useIsSuper()
   const [s, setS] = useState<SiteSettings>(db.settings)
   const [newCat, setNewCat] = useState("")
   const set = <K extends keyof SiteSettings>(k: K, v: SiteSettings[K]) => setS((x) => ({ ...x, [k]: v }))
@@ -47,10 +48,12 @@ export default function SettingsPage() {
   }
 
   const exportData = () => {
-    const blob = new Blob([JSON.stringify(getDB(), null, 2)], { type: "application/json" })
+    // alleen de gegevens van dit gebied, zonder beheerders of domeinen
+    const { settings, shops, products, reservations, emails } = getDB()
+    const blob = new Blob([JSON.stringify({ settings, shops, products, reservations, emails }, null, 2)], { type: "application/json" })
     const a = document.createElement("a")
     a.href = URL.createObjectURL(blob)
-    a.download = `windowshoppen-export-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `windowshoppen-${db.slug}-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
   }
 
@@ -100,6 +103,26 @@ export default function SettingsPage() {
             <input value={s.footerText} onChange={(e) => set("footerText", e.target.value)} className={inputCls} />
           </Field>
         </div>
+      </Card>
+
+      <Card>
+        <h2 className="mb-1 text-lg font-bold">Logo & favicon</h2>
+        <p className="mb-4 text-sm text-stone-500">
+          Gebruik bij voorkeur SVG of PNG met transparante achtergrond, in een kleur die goed zichtbaar is op de hoofdkleur.
+        </p>
+        <div className="grid gap-5 sm:grid-cols-3">
+          <BrandImagePicker label="Beeldmerk" hint="Klein, in de menubalk" value={s.brand.mark} onChange={(v) => set("brand", { ...s.brand, mark: v })} max={400} />
+          <BrandImagePicker label="Volledig logo" hint="Groot, onderaan de site" value={s.brand.logo} onChange={(v) => set("brand", { ...s.brand, logo: v })} max={800} />
+          <BrandImagePicker
+            label="Favicon"
+            hint="Icoontje in het browsertabblad (vierkant)"
+            value={s.brand.favicon}
+            onChange={(v) => set("brand", { ...s.brand, favicon: v })}
+            max={128}
+            dark={false}
+          />
+        </div>
+        <p className="mt-3 text-xs text-stone-500">Zonder favicon wordt automatisch een monogram in jullie kleuren gebruikt.</p>
       </Card>
 
       <Card>
@@ -239,28 +262,41 @@ export default function SettingsPage() {
       </Card>
 
       <Card>
-        <h2 className="mb-4 text-lg font-bold">Beveiliging & data</h2>
-        <AdminAccount />
-        <div className="mt-4 flex flex-wrap gap-2">
+        <h2 className="mb-1 text-lg font-bold">Beheerders van {db.settings.areaName}</h2>
+        <p className="mb-4 text-sm text-stone-500">Wie mag dit winkelgebied beheren. Andere winkelgebieden zijn voor hen onzichtbaar.</p>
+        <AreaAdminManager areaId={db.id} admins={db.admins} />
+      </Card>
+
+      <Card>
+        <h2 className="mb-4 text-lg font-bold">Mijn wachtwoord</h2>
+        <ChangeOwnPassword />
+      </Card>
+
+      <Card>
+        <h2 className="mb-1 text-lg font-bold">Gegevens van dit winkelgebied</h2>
+        <p className="mb-4 text-sm text-stone-500">Export en import gaan alleen over {db.settings.areaName}.</p>
+        <div className="flex flex-wrap gap-2">
           <button onClick={exportData} className="flex h-11 items-center gap-2 rounded-xl bg-stone-100 px-4 text-sm font-bold">
-            <Download className="h-4 w-4" /> Exporteer alles (JSON)
+            <Download className="h-4 w-4" /> Exporteer (JSON)
           </button>
           <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-stone-100 px-4 text-sm font-bold">
             <Upload className="h-4 w-4" /> Importeer
             <input type="file" accept="application/json" className="hidden" onChange={(e) => importData(e.target.files?.[0])} />
           </label>
-          <button
-            onClick={() => {
-              if (confirm("Alles terugzetten naar de demo-gegevens? Je wijzigingen gaan verloren.")) {
-                actions.resetDemo()
-                setS(getDB().settings)
-                toast("Demo hersteld")
-              }
-            }}
-            className="flex h-11 items-center gap-2 rounded-xl bg-accent-soft px-4 text-sm font-bold text-accent"
-          >
-            <RotateCcw className="h-4 w-4" /> Demo resetten
-          </button>
+          {isSuper && (
+            <button
+              onClick={() => {
+                if (confirm("Het hele demo-platform (alle winkelgebieden) terugzetten? Alle wijzigingen gaan verloren.")) {
+                  actions.resetDemo()
+                  setS(getDB().settings)
+                  toast("Demo hersteld")
+                }
+              }}
+              className="flex h-11 items-center gap-2 rounded-xl bg-accent-soft px-4 text-sm font-bold text-accent"
+            >
+              <RotateCcw className="h-4 w-4" /> Demo resetten (alle gebieden)
+            </button>
+          )}
         </div>
       </Card>
 
@@ -274,41 +310,6 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
-    </div>
-  )
-}
-
-/** Inloggegevens van de beheerder. Wordt los opgeslagen; het wachtwoord alleen als hash. */
-function AdminAccount() {
-  const db = useDB()
-  const [email, setEmail] = useState(db.settings.adminEmail)
-  const [pw, setPw] = useState("")
-  const [pw2, setPw2] = useState("")
-  const save = async () => {
-    if (!isValidEmail(email)) return toast("Vul een geldig e-mailadres in")
-    if (pw && pw.length < 8) return toast("Kies een wachtwoord van minimaal 8 tekens")
-    if (pw !== pw2) return toast("De wachtwoorden zijn niet gelijk")
-    actions.updateSettings({ adminEmail: email.trim(), ...(pw ? { adminPasswordHash: await hashPassword(pw) } : {}) })
-    setPw("")
-    setPw2("")
-    toast("Inloggegevens bijgewerkt")
-  }
-  return (
-    <div className="space-y-3">
-      <Field label="E-mailadres beheerder">
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" className={inputCls} />
-      </Field>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Nieuw wachtwoord" hint="Leeg laten = niet wijzigen">
-          <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" className={inputCls} />
-        </Field>
-        <Field label="Herhaal wachtwoord" hint={"\u00a0"}>
-          <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" className={inputCls} />
-        </Field>
-      </div>
-      <button onClick={save} className="h-11 rounded-xl bg-primary px-4 text-sm font-bold text-white">
-        Inloggegevens opslaan
-      </button>
     </div>
   )
 }

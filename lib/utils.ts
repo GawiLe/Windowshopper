@@ -106,3 +106,11 @@ export function resizeImage(file: File, max = 1200, quality = 0.82): Promise<str
 export function isValidEmail(s: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim())
 }
+
+/** "a.nl, b.nl www.c.nl" → ["a.nl", "b.nl", "www.c.nl"] */
+export function parseDomains(text: string) {
+  return text
+    .split(/[\s,;]+/)
+    .map((d) => d.trim())
+    .filter(Boolean)
+}

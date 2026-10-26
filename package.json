@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed-sql": "tsx scripts/generate-seed-sql.ts"
+    "db:seed-sql": "tsx scripts/generate-seed-sql.ts",
+    "db:test": "node scripts/test-tenant-isolation.mjs"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
@@ -18,6 +19,7 @@
     "resend": "^6.34.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.22",
     "@types/node": "^20",

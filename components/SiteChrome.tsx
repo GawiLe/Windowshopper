@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Gift, Home, ListChecks, MapPinned, Store } from "lucide-react"
-import { useDB, useHydrated, useList } from "@/lib/store"
+import { platformActions, useDB, useDomainLocked, useHydrated, useList, usePlatform } from "@/lib/store"
+import { AreaLogo, AreaMark } from "./AreaBrand"
 import { cn } from "@/lib/utils"
 
 const NAV = [
@@ -36,8 +37,7 @@ export function SiteHeader() {
     <header className="no-print sticky top-0 z-40 bg-primary text-white shadow-md">
       <div className="wrap flex h-16 items-center justify-between gap-3 md:h-20">
         <Link href="/" className="flex min-w-0 items-center gap-3" aria-label="Naar de startpagina">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/kempenaer-crest.svg" alt="" className="h-7 w-auto shrink-0 sm:h-9 md:h-11" />
+          <AreaMark className="h-7 text-[28px] sm:h-9 sm:text-[36px] md:h-11 md:text-[44px]" />
           <span className="min-w-0 border-l border-gold/40 pl-2.5 leading-tight sm:pl-3">
             <span className="block truncate font-display text-[17px] font-semibold md:text-xl">{settings.siteName}</span>
             <span className="block truncate text-[10px] font-medium uppercase tracking-[0.12em] text-gold sm:tracking-[0.22em] md:text-[11px]">
@@ -130,8 +130,7 @@ export function SiteFooter() {
       <div className="gold-line" />
       <div className="wrap grid gap-8 py-12 text-sm md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/kempenaer-emblem.svg" alt={`Winkelgebied ${settings.areaName}, ${settings.town}`} className="h-28 w-auto" />
+          <AreaLogo className="h-28" />
           <p className="mt-4 max-w-sm">{settings.footerText}</p>
         </div>
         <div className="space-y-2">
@@ -152,9 +151,41 @@ export function SiteFooter() {
           </ul>
         </div>
       </div>
+      <AreaSwitcher />
       <p className="pb-6 text-center text-xs text-white/50">
         © {new Date().getFullYear()} {settings.privacy.controllerName}
       </p>
     </footer>
+  )
+}
+
+/** Alleen in de demo / op localhost: wisselen tussen winkelgebieden. Op een echt domein onzichtbaar. */
+function AreaSwitcher() {
+  const locked = useDomainLocked()
+  const hydrated = useHydrated()
+  const platform = usePlatform()
+  const db = useDB()
+  if (!hydrated || locked || platform.areas.length < 2) return null
+  return (
+    <div className="wrap pb-6">
+      <label className="flex flex-wrap items-center gap-2 rounded-xl bg-black/20 px-3 py-2 text-xs text-white/70">
+        Demo – winkelgebied bekijken:
+        <select
+          value={db.id}
+          onChange={(e) => {
+            platformActions.switchArea(e.target.value)
+            window.scrollTo({ top: 0 })
+          }}
+          className="rounded-lg bg-white/10 px-2 py-1 text-white"
+        >
+          {platform.areas.map((a) => (
+            <option key={a.id} value={a.id} className="text-ink">
+              {a.settings.areaName} ({a.domains[0] ?? a.slug})
+            </option>
+          ))}
+        </select>
+        <span>Op het echte domein zie je alleen dat ene gebied.</span>
+      </label>
+    </div>
   )
 }

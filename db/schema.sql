@@ -1,30 +1,61 @@
 -- =====================================================================
--- Windowshoppen – Winkelgebied De Kempenaer – databaseschema voor Neon (Postgres 16+)
+-- Windowshoppen – multi-tenant databaseschema voor Neon (Postgres 16+)
 -- =====================================================================
--- Draai dit in de Neon SQL Editor (of: psql "$DATABASE_URL" -f db/schema.sql),
--- daarna eventueel db/seed.sql voor de demo-winkels.
+-- Eén database, meerdere winkelgebieden (tenants), bv. shoppenkempenaer.nl en shoppenmijdrecht.nl.
 --
--- Neon is "gewone" Postgres: er is geen ingebouwde login of bestandsopslag.
---   * Inloggen      → eigen magic-link login (tabellen users / login_tokens / sessions hieronder)
---   * Toegang       → in de server actions: elke query van een winkelier filtert op zijn shop_id
---   * Foto's        → Vercel Blob; in de database staan alleen de URL's
---   * Opschonen     → Vercel Cron roept /api/cron aan, die de functies onderaan uitvoert
--- Bezoekers hebben GEEN account: hun lijstje leeft in de browser / deel-link.
+-- Scheiding tussen winkelgebieden, in drie lagen:
+--   1. Elke tabel met gebiedsgegevens heeft een kolom area_id.
+--   2. Samengestelde foreign keys (id, area_id) maken het onmogelijk om bv. een product van
+--      gebied A aan een winkel van gebied B te koppelen, of een reservering te kruisen.
+--   3. Row Level Security (FORCE): elke query ziet en wijzigt alleen rijen van het gebied dat de
+--      app per transactie instelt met  select set_config('app.area_id', '<uuid>', true).
+--      Zonder die instelling ziet een query niets. Alleen de superadmin-schermen en de
+--      opschoonjobs zetten bewust  app.platform = 'super'  om over alle gebieden te werken.
 --
--- Mail: via Resend (https://resend.com), aangeroepen vanuit de server actions.
+-- Rollen:
+--   * superadmin (users.is_super_admin) – beheert alle gebieden
+--   * admin van een gebied (memberships.role = 'admin') – één of meer per gebied
+--   * winkelier (memberships.role = 'shop', met shop_id)
+--   Bezoekers hebben GEEN account: hun lijstje leeft in de browser / deel-link.
 --
--- De tabellen spiegelen de types in lib/types.ts (camelCase → snake_case, prijzen in centen).
+-- Laat de app verbinden met een eigen rol zonder BYPASSRLS (zie onderaan en docs/V0-MIGRATIE.md).
 -- ---------------------------------------------------------------------
 
--- pgcrypto: voor bcrypt-wachtwoordcontrole van de beheerder (crypt / gen_salt)
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto; -- bcrypt voor wachtwoorden (crypt / gen_salt)
 
--- ---------- Instellingen (precies 1 rij) -------------------------------
-create table site_settings (
-  id                     int primary key default 1 check (id = 1),
+-- ---------- Context van het huidige verzoek ----------------------------
+create function current_area_id() returns uuid
+language sql stable as $$
+  select nullif(current_setting('app.area_id', true), '')::uuid
+$$;
+
+create function is_platform_scope() returns boolean
+language sql stable as $$
+  select coalesce(current_setting('app.platform', true), '') = 'super'
+$$;
+
+-- ---------- Winkelgebieden (tenants) -----------------------------------
+create table areas (
+  id          uuid primary key default gen_random_uuid(),
+  slug        text not null unique check (slug ~ '^[a-z0-9-]+$'),
+  name        text not null,
+  active      boolean not null default true,
+  created_at  timestamptz not null default now()
+);
+
+-- Welk domein hoort bij welk gebied. Wordt gelezen vóórdat het gebied bekend is (geen RLS).
+create table area_domains (
+  domain   text primary key check (domain = lower(domain) and domain !~ '^www\.' and domain ~ '^[a-z0-9.-]+\.[a-z]{2,}$'),
+  area_id  uuid not null references areas(id) on delete cascade
+);
+create index area_domains_area_idx on area_domains (area_id);
+
+-- Instellingen per gebied (teksten, kleuren, logo's, regels, privacy)
+create table area_settings (
+  area_id                uuid primary key references areas(id) on delete cascade,
   site_name              text not null default 'Windowshoppen',
-  area_name              text not null default 'De Kempenaer',
-  town                   text not null default 'Oegstgeest',
+  area_name              text not null default '',
+  town                   text not null default '',
   hero_title             text not null default '',
   hero_subtitle          text not null default '',
   intro_text             text not null default '',
@@ -35,91 +66,116 @@ create table site_settings (
   reservation_hours      int  not null default 24 check (reservation_hours between 1 and 168),
   reservations_enabled   boolean not null default true,
   snow_enabled           boolean not null default true,
-  map                    jsonb not null default '{"lat":52.1806,"lng":4.4706,"zoom":17}', -- middelpunt kaart
+  map                    jsonb not null default '{"lat":52.18,"lng":4.47,"zoom":16}',
   colors                 jsonb not null default '{"primary":"#023934","accent":"#9b2c2c","gold":"#c09a5e","background":"#f8f4ec","text":"#1f2a28"}',
+  brand                  jsonb not null default '{"logo":null,"mark":null,"favicon":null}', -- URL's (Vercel Blob)
   categories             text[] not null default array['Boeken & papier','Eten & drinken','Wonen & lifestyle','Kinderen & speelgoed','Bloemen & planten','Mode & sieraden','Beauty & verzorging','Overig'],
   privacy                jsonb not null default '{"controllerName":"","controllerAddress":"","contactEmail":"","kvk":"","retentionDays":30}',
+  mail_from              text,  -- bv. 'Windowshoppen <kado@shoppenkempenaer.nl>' (domein geverifieerd in Resend)
   updated_at             timestamptz not null default now()
 );
-insert into site_settings (id) values (1) on conflict do nothing;
+
+-- elk nieuw gebied krijgt automatisch een instellingenrij
+create function create_area_settings() returns trigger
+language plpgsql as $$
+begin
+  insert into area_settings (area_id, area_name) values (new.id, new.name);
+  return new;
+end $$;
+create trigger areas_settings after insert on areas
+  for each row execute function create_area_settings();
 
 -- ---------- Winkels ----------------------------------------------------
 create table shops (
   id                  uuid primary key default gen_random_uuid(),
-  slug                text not null unique check (slug ~ '^[a-z0-9-]+$'),
+  area_id             uuid not null references areas(id) on delete cascade,
+  slug                text not null check (slug ~ '^[a-z0-9-]+$'),
   name                text not null,
   tagline             text not null default '',
   bio                 text not null default '',
   category            text not null default 'Overig',
-  logo_url            text,                        -- Vercel Blob URL
-  cover_color         text not null default '#1f4d3a',
-  icon                text not null default 'gift',  -- sleutel uit lib/icons.ts
+  logo_url            text,
+  cover_color         text not null default '#023934',
+  icon                text not null default 'gift',
   address             text not null default '',
   phone               text not null default '',
   email               text not null,               -- ontvangt reserveringsmails
   website             text not null default '',
   instagram           text not null default '',
-  opening_hours       jsonb not null default '[]', -- [{"day":0-6,"open":"09:30","close":"18:00"}]
-  lat                 double precision check (lat between -90 and 90),    -- plek op de kaart; leeg = opzoeken via adres (PDOK)
+  opening_hours       jsonb not null default '[]',
+  lat                 double precision check (lat between -90 and 90),
   lng                 double precision check (lng between -180 and 180),
   allow_reservations  boolean not null default true,
   active              boolean not null default true,
-  created_at          timestamptz not null default now()
+  created_at          timestamptz not null default now(),
+  unique (area_id, slug),
+  unique (id, area_id)                              -- doel voor samengestelde foreign keys
 );
 
--- ---------- Gebruikers & inloggen ---------------------------------------
--- Admin en winkeliers. Een winkel kan meerdere gebruikers hebben (bv. eigenaar + medewerker).
--- Beheerder: e-mail + wachtwoord (bcrypt in password_hash). Winkeliers: inloglink per e-mail
--- (password_hash leeg), of optioneel ook een wachtwoord.
---   Controleren:  select * from users where lower(email) = lower($1) and password_hash = crypt($2, password_hash)
---   Wijzigen:     update users set password_hash = crypt($2, gen_salt('bf', 12)) where id = $1
+-- ---------- Gebruikers, rollen & inloggen -------------------------------
 create table users (
-  id             uuid primary key default gen_random_uuid(),
-  email          text not null,
-  name           text not null default '',
-  password_hash  text,
-  role        text not null check (role in ('admin', 'shop')),
-  shop_id     uuid references shops(id) on delete cascade,
-  created_at  timestamptz not null default now(),
-  last_login  timestamptz,
-  constraint shop_user_has_shop check (role = 'admin' or shop_id is not null)
+  id              uuid primary key default gen_random_uuid(),
+  email           text not null,
+  name            text not null default '',
+  password_hash   text,                     -- bcrypt; leeg = alleen inloglink
+  is_super_admin  boolean not null default false,
+  created_at      timestamptz not null default now(),
+  last_login      timestamptz
 );
 create unique index users_email_idx on users (lower(email));
 
--- Mislukte inlogpogingen (rem op wachtwoord raden: bv. max. 5 per 15 min per e-mail)
+-- Wie mag wat in welk gebied. Eén gebruiker kan in meerdere gebieden een rol hebben.
+create table memberships (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references users(id) on delete cascade,
+  area_id     uuid not null references areas(id) on delete cascade,
+  role        text not null check (role in ('admin', 'shop')),
+  shop_id     uuid,
+  created_at  timestamptz not null default now(),
+  constraint role_shop check ((role = 'admin' and shop_id is null) or (role = 'shop' and shop_id is not null)),
+  constraint shop_same_area foreign key (shop_id, area_id) references shops (id, area_id) on delete cascade
+);
+create unique index memberships_admin_idx on memberships (user_id, area_id) where role = 'admin';
+create unique index memberships_shop_idx on memberships (user_id, shop_id) where role = 'shop';
+create index memberships_area_idx on memberships (area_id);
+
+-- Eenmalige inloglinks; gebonden aan het gebied (domein) waar ze zijn aangevraagd.
+create table login_tokens (
+  token_hash  text primary key,                -- sha256 van het token
+  user_id     uuid not null references users(id) on delete cascade,
+  area_id     uuid references areas(id) on delete cascade, -- null = superadmin-login
+  expires_at  timestamptz not null,
+  used_at     timestamptz
+);
+
+-- Sessies, eveneens per gebied. Een sessie van gebied A is op het domein van gebied B ongeldig.
+create table sessions (
+  token_hash  text primary key,
+  user_id     uuid not null references users(id) on delete cascade,
+  area_id     uuid references areas(id) on delete cascade, -- null = superadmin-sessie
+  created_at  timestamptz not null default now(),
+  expires_at  timestamptz not null
+);
+create index sessions_user_idx on sessions (user_id);
+
 create table login_attempts (
   email       text not null,
   ip          text,
+  area_id     uuid references areas(id) on delete cascade,
   created_at  timestamptz not null default now()
 );
 create index login_attempts_idx on login_attempts (lower(email), created_at);
 
--- Eenmalige inloglinks. Sla alleen een hash van het token op (sha256), nooit het token zelf.
-create table login_tokens (
-  token_hash  text primary key,
-  user_id     uuid not null references users(id) on delete cascade,
-  expires_at  timestamptz not null,            -- bv. now() + 15 minuten
-  used_at     timestamptz
-);
-
--- Sessies (cookie bevat het ruwe sessie-token, de database alleen de hash).
-create table sessions (
-  token_hash  text primary key,
-  user_id     uuid not null references users(id) on delete cascade,
-  created_at  timestamptz not null default now(),
-  expires_at  timestamptz not null             -- bv. now() + 30 dagen
-);
-create index sessions_user_idx on sessions (user_id);
-
 -- ---------- Producten --------------------------------------------------
 create table products (
   id           uuid primary key default gen_random_uuid(),
-  shop_id      uuid not null references shops(id) on delete cascade,
+  area_id      uuid not null references areas(id) on delete cascade,
+  shop_id      uuid not null,
   title        text not null check (char_length(title) between 2 and 80),
   description  text not null default '' check (char_length(description) <= 800),
   price_cents  int  not null check (price_cents > 0),
-  images       text[] not null default '{}' check (cardinality(images) <= 4), -- Vercel Blob URL's
-  icon         text not null default 'gift',   -- illustratie zolang er geen foto is (lib/icons.ts)
+  images       text[] not null default '{}' check (cardinality(images) <= 4),
+  icon         text not null default 'gift',
   category     text not null default 'Overig',
   tags         text[] not null default '{}',
   stock_mode   text not null default 'toggle' check (stock_mode in ('toggle', 'count')),
@@ -129,12 +185,13 @@ create table products (
   active       boolean not null default true,
   sort_order   bigint not null default 0,
   created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
+  updated_at   timestamptz not null default now(),
+  unique (id, area_id),
+  constraint product_shop_same_area foreign key (shop_id, area_id) references shops (id, area_id) on delete cascade
 );
 create index products_shop_idx on products (shop_id, sort_order);
+create index products_area_idx on products (area_id);
 
--- Maximaal N producten per winkel (N uit site_settings). De lock voorkomt dat twee
--- gelijktijdige inserts samen over de grens gaan.
 create function enforce_product_limit() returns trigger
 language plpgsql as $$
 declare
@@ -142,78 +199,133 @@ declare
   cnt int;
 begin
   perform pg_advisory_xact_lock(hashtext(new.shop_id::text));
-  select max_products_per_shop into lim from site_settings where id = 1;
+  select max_products_per_shop into lim from area_settings where area_id = new.area_id;
   select count(*) into cnt from products where shop_id = new.shop_id;
-  if cnt >= lim then
+  if cnt >= coalesce(lim, 20) then
     raise exception 'Maximaal % producten per winkel', lim using errcode = 'check_violation';
   end if;
   return new;
 end $$;
-
 create trigger products_limit before insert on products
   for each row execute function enforce_product_limit();
 
 create function touch_updated_at() returns trigger
 language plpgsql as $$ begin new.updated_at = now(); return new; end $$;
-
 create trigger products_touch before update on products
   for each row execute function touch_updated_at();
 
 -- ---------- Reserveringen ----------------------------------------------
--- Eén checkout (order_id) levert één reservering per winkel op.
 create table reservations (
   id              uuid primary key default gen_random_uuid(),
-  code            text not null unique,              -- ophaalcode, bv. KS-4F7Q
+  area_id         uuid not null references areas(id) on delete cascade,
+  code            text not null,                    -- ophaalcode, uniek binnen het gebied
   order_id        uuid not null,
-  shop_id         uuid not null references shops(id) on delete cascade,
+  shop_id         uuid not null,
   customer_name   text not null,
   customer_email  text not null,
   customer_phone  text not null default '',
   pickup_date     date not null,
   note            text not null default '' check (char_length(note) <= 300),
   status          text not null default 'reserved' check (status in ('reserved', 'picked_up', 'expired', 'cancelled')),
-  consent_at      timestamptz not null default now(), -- moment van toestemming (AVG)
+  consent_at      timestamptz not null default now(),
   created_at      timestamptz not null default now(),
   expires_at      timestamptz not null,
-  picked_up_at    timestamptz
+  picked_up_at    timestamptz,
+  unique (area_id, code),
+  unique (id, area_id),
+  constraint reservation_shop_same_area foreign key (shop_id, area_id) references shops (id, area_id) on delete cascade
 );
 create index reservations_shop_idx on reservations (shop_id, status, pickup_date);
 create index reservations_order_idx on reservations (order_id);
 
 create table reservation_items (
   id              uuid primary key default gen_random_uuid(),
-  reservation_id  uuid not null references reservations(id) on delete cascade,
-  product_id      uuid references products(id) on delete set null,
-  title           text not null,      -- kopie, zodat het overzicht klopt als het product later wijzigt
+  area_id         uuid not null references areas(id) on delete cascade,
+  reservation_id  uuid not null,
+  product_id      uuid,
+  title           text not null,
   price_cents     int  not null,
-  quantity        int  not null default 1 check (quantity between 1 and 9)
+  quantity        int  not null default 1 check (quantity between 1 and 9),
+  constraint item_reservation_same_area foreign key (reservation_id, area_id) references reservations (id, area_id) on delete cascade,
+  constraint item_product_same_area foreign key (product_id, area_id) references products (id, area_id) on delete set null (product_id)
 );
 create index reservation_items_res_idx on reservation_items (reservation_id);
 
 -- ---------- Mail-log ---------------------------------------------------
 create table email_log (
   id          uuid primary key default gen_random_uuid(),
-  kind        text not null check (kind in ('shop_new_reservation', 'customer_confirmation', 'customer_list', 'shop_welcome', 'login_link')),
+  area_id     uuid not null references areas(id) on delete cascade,
+  kind        text not null check (kind in ('shop_new_reservation', 'customer_confirmation', 'customer_list', 'shop_welcome', 'login_link', 'admin_welcome')),
   to_email    text not null,
   subject     text not null,
-  shop_id     uuid references shops(id) on delete cascade,
-  provider_id text,                   -- id van Resend
-  created_at  timestamptz not null default now()
+  shop_id     uuid,
+  provider_id text,
+  created_at  timestamptz not null default now(),
+  constraint mail_shop_same_area foreign key (shop_id, area_id) references shops (id, area_id) on delete cascade
   -- bewust GEEN mailinhoud: geen dubbele opslag van persoonsgegevens
 );
 
+-- ---------- Row Level Security -----------------------------------------
+-- FORCE zorgt dat RLS ook geldt voor de eigenaar van de tabellen.
+do $$
+declare t text;
+begin
+  foreach t in array array['area_settings', 'shops', 'products', 'reservations', 'reservation_items', 'email_log', 'memberships'] loop
+    execute format('alter table %I enable row level security', t);
+    execute format('alter table %I force row level security', t);
+    execute format(
+      'create policy tenant_isolation on %I using (area_id = current_area_id() or is_platform_scope()) '
+      'with check (area_id = current_area_id() or is_platform_scope())', t);
+  end loop;
+end $$;
+
+-- areas zelf: iedereen mag het eigen gebied lezen; aanmaken/wijzigen alleen in platform-scope
+alter table areas enable row level security;
+alter table areas force row level security;
+create policy areas_read on areas for select using (id = current_area_id() or is_platform_scope());
+create policy areas_write on areas for all using (is_platform_scope()) with check (is_platform_scope());
+
+-- Nieuwe rijen krijgen automatisch het gebied van de context, zodat de app het niet kan vergeten.
+create function set_area_from_context() returns trigger
+language plpgsql as $$
+begin
+  if new.area_id is null then new.area_id := current_area_id(); end if;
+  if new.area_id is null then raise exception 'Geen winkelgebied ingesteld (app.area_id)'; end if;
+  return new;
+end $$;
+do $$
+declare t text;
+begin
+  foreach t in array array['shops', 'products', 'reservations', 'reservation_items', 'email_log', 'memberships'] loop
+    execute format('create trigger %I before insert on %I for each row execute function set_area_from_context()', t || '_area', t);
+  end loop;
+end $$;
+
 -- ---------- Reserveren als één atomaire actie --------------------------
--- Aanroepen vanuit de server action:
+-- Draait binnen het gebied uit app.area_id. Producten van andere gebieden zijn door RLS
+-- onzichtbaar, dus die kunnen hier nooit in een reservering terechtkomen.
 --   select * from create_reservations($1, $2, $3, $4::date, $5, $6::jsonb)
--- met p_items = '[{"product_id":"…","quantity":1}, …]'.
--- Voorraad en reserveringen kloppen zo altijd, ook als twee mensen tegelijk reserveren.
+create function new_pickup_code(p_area uuid) returns text
+language plpgsql as $$
+declare
+  alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  c text;
+begin
+  loop
+    c := 'KS-' || (select string_agg(substr(alphabet, 1 + floor(random() * 32)::int, 1), '') from generate_series(1, 4));
+    exit when not exists (select 1 from reservations where area_id = p_area and code = c);
+  end loop;
+  return c;
+end $$;
+
 create function create_reservations(
   p_name text, p_email text, p_phone text, p_pickup date, p_note text, p_items jsonb
 ) returns setof reservations
 language plpgsql as $$
 declare
+  v_area    uuid := current_area_id();
   v_order   uuid := gen_random_uuid();
-  v_set     site_settings%rowtype;
+  v_set     area_settings%rowtype;
   v_expires timestamptz;
   v_qty     int;
   v_res_id  uuid;
@@ -222,21 +334,21 @@ declare
   shop      shops%rowtype;
   shop_res  jsonb := '{}';
 begin
-  select * into v_set from site_settings where id = 1;
+  if v_area is null then raise exception 'Geen winkelgebied ingesteld'; end if;
+  select * into v_set from area_settings where area_id = v_area;
   if not v_set.reservations_enabled then
     raise exception 'Reserveren is op dit moment niet mogelijk';
   end if;
   if p_pickup < (now() at time zone 'Europe/Amsterdam')::date then
     raise exception 'Ophaaldag ligt in het verleden';
   end if;
-  -- geldig tot het einde van de ophaaldag, en minimaal reservation_hours
   v_expires := greatest((p_pickup + time '23:59') at time zone 'Europe/Amsterdam',
                         now() + make_interval(hours => v_set.reservation_hours));
 
   for it in select * from jsonb_array_elements(p_items) loop
     v_qty := greatest(1, least(9, coalesce((it->>'quantity')::int, 1)));
-    select * into prod from products where id = (it->>'product_id')::uuid for update;
-    select * into shop from shops where id = prod.shop_id;
+    select * into prod from products where id = (it->>'product_id')::uuid and area_id = v_area for update;
+    select * into shop from shops where id = prod.shop_id and area_id = v_area;
     if prod.id is null or not prod.active or not prod.reservable or not shop.active or not shop.allow_reservations then
       raise exception 'Product niet beschikbaar';
     end if;
@@ -250,31 +362,17 @@ begin
     if shop_res ? prod.shop_id::text then
       v_res_id := (shop_res->>prod.shop_id::text)::uuid;
     else
-      insert into reservations (code, order_id, shop_id, customer_name, customer_email, customer_phone, pickup_date, note, expires_at)
-      values (new_pickup_code(), v_order, prod.shop_id, p_name, p_email, coalesce(p_phone, ''), p_pickup, coalesce(p_note, ''), v_expires)
+      insert into reservations (area_id, code, order_id, shop_id, customer_name, customer_email, customer_phone, pickup_date, note, expires_at)
+      values (v_area, new_pickup_code(v_area), v_order, prod.shop_id, p_name, p_email, coalesce(p_phone, ''), p_pickup, coalesce(p_note, ''), v_expires)
       returning id into v_res_id;
       shop_res := shop_res || jsonb_build_object(prod.shop_id::text, v_res_id);
     end if;
 
-    insert into reservation_items (reservation_id, product_id, title, price_cents, quantity)
-    values (v_res_id, prod.id, prod.title, prod.price_cents, v_qty);
+    insert into reservation_items (area_id, reservation_id, product_id, title, price_cents, quantity)
+    values (v_area, v_res_id, prod.id, prod.title, prod.price_cents, v_qty);
   end loop;
 
   return query select * from reservations where order_id = v_order;
-end $$;
-
--- Korte, goed leesbare ophaalcode zonder verwarrende tekens (0/O, 1/I)
-create function new_pickup_code() returns text
-language plpgsql as $$
-declare
-  alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  c text;
-begin
-  loop
-    c := 'KS-' || (select string_agg(substr(alphabet, 1 + floor(random() * 32)::int, 1), '') from generate_series(1, 4));
-    exit when not exists (select 1 from reservations where code = c);
-  end loop;
-  return c;
 end $$;
 
 -- Statuswissel: voorraad terug bij annuleren/verlopen, weer af bij terugzetten
@@ -287,57 +385,72 @@ begin
   if holding_old and not holding_new then
     update products p set stock = p.stock + ri.quantity
       from reservation_items ri
-     where ri.reservation_id = new.id and ri.product_id = p.id and p.stock_mode = 'count';
+     where ri.reservation_id = new.id and ri.product_id = p.id and p.area_id = new.area_id and p.stock_mode = 'count';
   elsif holding_new and not holding_old then
     update products p set stock = greatest(0, p.stock - ri.quantity)
       from reservation_items ri
-     where ri.reservation_id = new.id and ri.product_id = p.id and p.stock_mode = 'count';
+     where ri.reservation_id = new.id and ri.product_id = p.id and p.area_id = new.area_id and p.stock_mode = 'count';
   end if;
   new.picked_up_at := case when new.status = 'picked_up' then coalesce(old.picked_up_at, now()) else null end;
   return new;
 end $$;
-
 create trigger reservations_status before update of status on reservations
   for each row when (old.status is distinct from new.status)
   execute function on_reservation_status();
 
--- ---------- Opschonen (AVG) --------------------------------------------
--- Laat Vercel Cron elke 10 minuten /api/cron aanroepen; die route draait:
---   select expire_reservations();  select purge_personal_data();
+-- ---------- Opschonen (AVG) – voor alle gebieden -----------------------
+-- Vercel Cron roept /api/cron aan, die draait:  select expire_reservations(); select purge_personal_data();
 create function expire_reservations() returns int
-language sql as $$
-  with x as (
-    update reservations set status = 'expired'
-     where status = 'reserved' and expires_at < now()
-    returning 1
-  ) select count(*)::int from x;
-$$;
+language plpgsql as $$
+declare n int;
+begin
+  perform set_config('app.platform', 'super', true);
+  update reservations set status = 'expired' where status = 'reserved' and expires_at < now();
+  get diagnostics n = row_count;
+  return n;
+end $$;
 
 create function purge_personal_data() returns void
 language plpgsql as $$
-declare
-  days int := (select coalesce((privacy->>'retentionDays')::int, 30) from site_settings where id = 1);
 begin
-  delete from reservations where status <> 'reserved' and created_at < now() - make_interval(days => days);
-  delete from email_log    where created_at < now() - make_interval(days => days);
+  perform set_config('app.platform', 'super', true);
+  -- bewaartermijn per gebied
+  delete from reservations r using area_settings s
+   where s.area_id = r.area_id and r.status <> 'reserved'
+     and r.created_at < now() - make_interval(days => coalesce((s.privacy->>'retentionDays')::int, 30));
+  delete from email_log m using area_settings s
+   where s.area_id = m.area_id
+     and m.created_at < now() - make_interval(days => coalesce((s.privacy->>'retentionDays')::int, 30));
   delete from login_tokens where expires_at < now();
+  delete from sessions where expires_at < now();
   delete from login_attempts where created_at < now() - interval '1 day';
-  delete from sessions     where expires_at < now();
 end $$;
 
--- ---------- Handige views ----------------------------------------------
--- Publieke etalage: alleen zichtbare producten van zichtbare winkels.
-create view public_products as
-  select p.* from products p join shops s on s.id = p.shop_id
+-- ---------- Handige views (respecteren RLS van de onderliggende tabellen) ----
+create view public_products with (security_invoker = true) as
+  select p.* from products p join shops s on s.id = p.shop_id and s.area_id = p.area_id
    where p.active and s.active;
 
--- Overzicht voor de winkelier: reservering + items als JSON (filter altijd op shop_id!)
-create view reservation_overview as
+create view reservation_overview with (security_invoker = true) as
   select r.*,
          coalesce(jsonb_agg(jsonb_build_object(
            'productId', ri.product_id, 'title', ri.title,
            'price', ri.price_cents / 100.0, 'quantity', ri.quantity) order by ri.title)
            filter (where ri.id is not null), '[]') as items
     from reservations r
-    left join reservation_items ri on ri.reservation_id = r.id
+    left join reservation_items ri on ri.reservation_id = r.id and ri.area_id = r.area_id
    group by r.id;
+
+-- ---------- Rechten voor de app-rol ------------------------------------
+-- Maak in Neon (Roles) een rol 'windowshop_app' aan en gebruik díe verbindingsstring in de app.
+-- Deze rol is geen eigenaar en heeft geen BYPASSRLS, dus RLS geldt altijd.
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'windowshop_app') then
+    grant usage on schema public to windowshop_app;
+    grant select, insert, update, delete on all tables in schema public to windowshop_app;
+    grant execute on all functions in schema public to windowshop_app;
+    alter default privileges in schema public grant select, insert, update, delete on tables to windowshop_app;
+    alter default privileges in schema public grant execute on functions to windowshop_app;
+  end if;
+end $$;

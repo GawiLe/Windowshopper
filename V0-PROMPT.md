@@ -4,59 +4,67 @@ Upload de zip van dit project in v0 en plak **alles tussen de twee lijnen** als 
 
 ---
 
-Dit project is een werkende Next.js-app (App Router, React 19, Tailwind v4, lucide-react, Leaflet): **"Windowshoppen – Winkelgebied De Kempenaer"** (Oegstgeest), een mobiel-first kerstwebshop van meerdere winkels uit één winkelgebied. Alles werkt al, maar de data staat nog in `localStorage` van de browser (`lib/store.ts`). Maak er een echte, live app van met een **Neon**-database, **Resend** voor e-mail en **Vercel Blob** voor foto's. **Behoud het bestaande design, de teksten (Nederlands) en de mobiele bediening precies zoals ze zijn.** De huisstijl komt uit het logo in `public/brand/` (groen #023934, goud #c09a5e, Playfair Display + Jost). Gebruik geen emoji's; iconen komen uit `lucide-react` via `lib/icons.ts`.
+Dit project is een werkende Next.js 16-app (App Router, React 19, Tailwind v4, lucide-react, Leaflet): **"Windowshoppen"**, een mobiel-first kerstwebshop voor **meerdere winkelgebieden (multi-tenant)**. Elk winkelgebied draait op een eigen domein (bv. `shoppenkempenaer.nl` en `shoppenmijdrecht.nl`) met eigen winkels, producten, reserveringen, huisstijl en beheerders. Gegevens van verschillende gebieden mogen elkaar **nooit** raken of kruisen.
 
-Lees eerst `README.md`, `docs/V0-MIGRATIE.md`, `db/schema.sql`, `lib/types.ts` en `lib/store.ts`.
+Alles werkt al, maar de data staat nog in `localStorage` van de browser (`lib/store.ts`). Maak er een echte, live app van met een **Neon**-database, **Resend** voor e-mail en **Vercel Blob** voor foto's. **Behoud het bestaande design, de teksten (Nederlands) en de mobiele bediening precies zoals ze zijn.** Gebruik geen emoji's; iconen komen uit `lucide-react` via `lib/icons.ts`. Let op: in Next.js 16 heet middleware `proxy.ts` (staat er al).
+
+Lees eerst `README.md`, `docs/V0-MIGRATIE.md`, `db/schema.sql`, `lib/types.ts`, `lib/store.ts` en `proxy.ts`.
 
 ## 1. Integraties
 - Koppel **Neon** (Vercel Marketplace, regio EU Frankfurt) en **Vercel Blob**. Zet Vercel Functions in regio `fra1`.
-- Env-variabelen staan in `.env.example`: `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, `RESEND_API_KEY`, `MAIL_FROM`, `NEXT_PUBLIC_SITE_URL`, `AUTH_SECRET`, `CRON_SECRET`.
+- Env-variabelen staan in `.env.example`.
 - Packages: `@neondatabase/serverless`, `@vercel/blob`, `resend` (staat er al).
-- Draai `db/schema.sql` en daarna `db/seed.sql` op de Neon-database. Pas de SQL niet inhoudelijk aan: alle regels (max. 20 producten per winkel, voorraad, reserveren, opschonen) zitten in de database.
+- Draai `db/schema.sql` en daarna `db/seed.sql` met de **eigenaar**-verbinding (`DATABASE_URL_OWNER`). Pas de SQL niet inhoudelijk aan: scheiding tussen gebieden, max. 20 producten per winkel, voorraad, reserveren en opschonen zitten in de database. `npm run db:test` bewijst dat de scheiding werkt.
+- Maak in Neon een rol **`windowshop_app`** aan (geen eigenaar, geen BYPASSRLS). De app gebruikt díe verbindingsstring als `DATABASE_URL`. Draai daarna het laatste blok van `db/schema.sql` (rechten) opnieuw.
 
-## 2. Datalaag
-- Maak `lib/db.ts` met `neon(process.env.DATABASE_URL!)`.
-- Vervang `useDB()` en alle functies in `actions.*` uit `lib/store.ts` door **server components** (lezen) en **server actions** (schrijven). De tabel in `docs/V0-MIGRATIE.md` laat per functie zien welke query hoort. Database-kolommen zijn snake_case en prijzen staan in **centen** (`price_cents`); zet ze om naar de bestaande types in `lib/types.ts` (camelCase, prijs in euro's).
-- Publieke pagina's lezen `site_settings`, `shops where active` en de view `public_products`.
-- Reserveren: server action die `select * from create_reservations($1,$2,$3,$4::date,$5,$6::jsonb)` aanroept. Toon bij een fout de foutmelding uit de database (bv. "Onvoldoende voorraad") netjes in het formulier.
-- Statussen van reserveringen wijzigen met `update reservations set status = … where id = … and shop_id = <shop uit sessie>`; triggers regelen de voorraad.
-- **Het kadolijstje van bezoekers (`useList`, `listActions`, deel-links) blijft in localStorage.** Bezoekers hebben geen account; sla hun lijstje niet op in de database.
-- Verwijder daarna de demo-onderdelen: `lib/seed.ts`-gebruik in de app, "Demo resetten", export/import van localStorage, de demo-inlogcodes op het inlogscherm voor winkeliers.
+## 2. Winkelgebied bepalen (tenant)
+- `proxy.ts` zet de header `x-ws-host` (domein zonder `www.`). Zoek het gebied op met `select area_id from area_domains where domain = $1`. Onbekend domein → 404, behalve op localhost/preview: daar kiest `?gebied=<slug>` (cookie `ws-gebied`) het gebied.
+- **Elke** databasetoegang gaat via één helper `withArea(areaId, fn)` die een transactie opent en als eerste `select set_config('app.area_id', $1, true)` uitvoert (Neon `Pool` of `sql.transaction`). Row Level Security laat dan alleen rijen van dat gebied zien; zonder deze instelling ziet een query niets. Schrijf nooit queries buiten deze helper.
+- Alleen de superadmin-schermen gebruiken `withPlatform(fn)` die `set_config('app.platform', 'super', true)` zet, en alleen na controle dat de ingelogde gebruiker `is_super_admin` is.
+- `generateMetadata` in `app/layout.tsx` gebruikt per domein de naam, beschrijving en `brand.favicon` uit `area_settings`.
 
-## 3. Inloggen en rechten
-- **Beheerder** (`/admin`): inloggen met e-mail + wachtwoord. Controle in SQL: `select … from users where lower(email)=lower($1) and role='admin' and password_hash = crypt($2, password_hash)`. Wachtwoord wijzigen in Admin → Instellingen: `update users set password_hash = crypt($1, gen_salt('bf', 12))`. Log mislukte pogingen in `login_attempts` en blokkeer na 5 mislukte pogingen per 15 minuten.
-- **Winkeliers** (`/winkelier`): inloggen met een **inloglink per e-mail** (magic link) via de tabellen `users`, `login_tokens` en `sessions` (zie `docs/V0-MIGRATIE.md`, "Inloglink"). Sla alleen sha256-hashes van tokens op. Sessie in een `httpOnly`, `secure`, `sameSite=lax` cookie, 30 dagen geldig.
-- **Rechten in elke server action controleren**: een winkelier mag alleen producten, reserveringen en het profiel van zijn eigen `shop_id` lezen/wijzigen. Een winkelier mag in zijn profiel alleen logo, tagline, bio, categorie, telefoon, e-mail, website, instagram, openingstijden, kleur, icoon en `allow_reservations` wijzigen. Alleen de beheerder beheert winkels, instellingen, alle producten en alle reserveringen, en kan "meekijken" bij een winkel.
-- Als de beheerder een winkel aanmaakt: maak ook een `users`-rij (`role='shop'`, `shop_id`) voor het e-mailadres van de winkel en stuur de welkomstmail met inloglink.
+## 3. Datalaag
+- Vervang `useDB()` en alle functies in `actions.*` en `platformActions.*` uit `lib/store.ts` door **server components** (lezen) en **server actions** (schrijven). De tabel in `docs/V0-MIGRATIE.md` laat per functie zien welke query hoort. Kolommen zijn snake_case, prijzen in **centen** (`price_cents`); zet ze om naar de types in `lib/types.ts` (camelCase, euro's).
+- Publieke pagina's lezen `area_settings`, `shops where active` en de view `public_products` (binnen `withArea`).
+- Reserveren: server action → `select * from create_reservations($1,$2,$3,$4::date,$5,$6::jsonb)` binnen `withArea`. Toon databasefouten (bv. "Onvoldoende voorraad") netjes in het formulier.
+- **Het kadolijstje van bezoekers (`useList`, `listActions`, deel-links) blijft in localStorage**, per gebied. Bezoekers hebben geen account.
+- Verwijder daarna de demo-onderdelen: seed-gebruik in de app, "Demo resetten", de gebiedswisselaar in de footer, export/import via localStorage en de demo-inlogcodes.
 
-## 4. E-mail via Resend
-- Gebruik de bestaande teksten uit `lib/emails.ts` en de HTML-opmaak uit `lib/mail-html.ts`.
-- Verstuur mails **vanuit de server actions** (niet vanuit de browser): na een geslaagde reservering één mail per winkel (`replyTo` = e-mail van de klant) en één bevestiging aan de klant; verder de welkomstmail en inloglinks.
-- Log elke verstuurde mail in `email_log` (zonder mailinhoud) en toon dat overzicht in Admin → Mails.
-- Verwijder daarna `app/api/mail/route.ts`: die publieke route is alleen voor de demo.
+## 4. Inloggen, rollen en rechten
+- Rollen: **superadmin** (`users.is_super_admin`), **gebiedsbeheerder** (`memberships.role='admin'`, één of meer per gebied) en **winkelier** (`memberships.role='shop'` met `shop_id`).
+- **Beheerders en superadmin**: e-mail + wachtwoord op `/admin` en `/superadmin`. Controle: `select … from users where lower(email)=lower($1) and password_hash = crypt($2, password_hash)`, daarna in `withArea`: bestaat er een `memberships`-rij `role='admin'` voor dit gebied (of is de gebruiker superadmin)? Wachtwoord wijzigen: `update users set password_hash = crypt($1, gen_salt('bf', 12))`. Log mislukte pogingen in `login_attempts` en blokkeer na 5 per 15 minuten.
+- **Winkeliers**: inloglink per e-mail via `login_tokens` en `sessions` (zie `docs/V0-MIGRATIE.md`). Sla alleen sha256-hashes op.
+- **Sessies horen bij één gebied** (`sessions.area_id`). Een sessie is alleen geldig op het domein van dat gebied; superadmin-sessies hebben `area_id = null`. Cookie: `httpOnly`, `secure`, `sameSite=lax`, per domein.
+- **Rechten in elke server action**: winkelier alleen eigen `shop_id`; gebiedsbeheerder alleen het eigen gebied (winkels, producten, reserveringen, instellingen, beheerders van dat gebied); superadmin alles, inclusief winkelgebieden aanmaken/wijzigen/verwijderen, domeinen koppelen en beheerders per gebied aanstellen (`/superadmin`).
+- Winkel aangemaakt → maak `users` + `memberships(role='shop')` en stuur de welkomstmail met inloglink. Beheerder toegevoegd → `users` + `memberships(role='admin')` en een welkomstmail.
 
-## 5. Kaart
-- `components/ShopMap.tsx` (Leaflet + OpenStreetMap-kaart) blijft zoals hij is. Winkels hebben `lat`/`lng`.
-- Zet de coördinaten op de **server** zodra de beheerder een winkel opslaat zonder `lat`/`lng` (of met een gewijzigd adres): roep de PDOK Locatieserver aan (`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=<adres plaats>&fq=type:adres&rows=1&fl=centroide_ll`, zie `geocodeAddress()` in `lib/geo.ts`) en sla het resultaat op. Verwijder daarna het automatisch opzoeken in de browser uit `ShopMap` (de beheerder kan de pin nog steeds verplaatsen door op de kaart te tikken).
+## 5. E-mail via Resend
+- Teksten in `lib/emails.ts`, HTML in `lib/mail-html.ts`, met naam en kleuren van het gebied.
+- Verstuur vanuit de server actions (niet vanuit de browser). Afzender per gebied: `area_settings.mail_from`, of `MAIL_FROM` waarin `{domain}` wordt vervangen door het domein van het gebied.
+- Log in `email_log` (zonder inhoud). Verwijder daarna `app/api/mail/route.ts` (alleen voor de demo).
 
-## 6. Foto's
-- Productfoto's (max. 4) en logo's: verklein in de browser met de bestaande `resizeImage()` uit `lib/utils.ts`, upload naar Vercel Blob onder `products/<shop_id>/…` of `logos/<shop_id>/…` en sla de URL's op. Controleer in de upload-actie dat de winkelier bij die `shop_id` hoort. Behoud de knoppen "Maak foto" (camera) en "Kies uit galerij".
+## 6. Kaart
+- `components/ShopMap.tsx` (Leaflet + OpenStreetMap) blijft. Bij opslaan van een winkel zonder `lat`/`lng` of met nieuw adres: zoek op de server de coördinaten op via PDOK (`geocodeAddress()` in `lib/geo.ts`) en sla ze op; verwijder het opzoeken in de browser uit `ShopMap`.
 
-## 7. Opschonen (privacy)
-- Voeg `app/api/cron/route.ts` toe die `Authorization: Bearer ${CRON_SECRET}` controleert en `select expire_reservations(); select purge_personal_data();` uitvoert.
-- Voeg `vercel.json` toe met `{"crons":[{"path":"/api/cron","schedule":"*/10 * * * *"}]}`.
+## 7. Foto's en logo's
+- Upload naar Vercel Blob onder `areas/<area_id>/products/<shop_id>/…`, `areas/<area_id>/shops/<shop_id>/…` en `areas/<area_id>/brand/…` (logo, beeldmerk, favicon). Controleer in de upload-actie gebied en winkel. Behoud "Maak foto" en "Kies uit galerij".
 
-## 8. Klaar is als
-- Bezoekers kunnen zonder account kado's bekijken, op hun lijstje zetten, delen en reserveren; winkels en klant krijgen echte mails via Resend.
-- Een winkelier logt in via een mail-link op zijn telefoon, plaatst producten met een foto, beheert voorraad en vinkt reserveringen af als opgehaald; hij ziet nooit gegevens van andere winkels.
-- De beheerder logt in met e-mail en wachtwoord en kan winkels toevoegen, wijzigen en verwijderen en alle instellingen, kleuren en teksten aanpassen; die wijzigingen zijn direct zichtbaar voor iedereen.
-- De kaart toont alle winkels op hun echte adres met pins in huisstijl.
+## 8. Opschonen (privacy)
+- `app/api/cron/route.ts` controleert `Authorization: Bearer ${CRON_SECRET}` en draait `select expire_reservations(); select purge_personal_data();` (werkt voor alle gebieden).
+- `vercel.json`: `{"crons":[{"path":"/api/cron","schedule":"*/10 * * * *"}]}`.
+
+## 9. Klaar is als
+- Op `shoppenkempenaer.nl` zie je alleen De Kempenaer, op `shoppenmijdrecht.nl` alleen Mijdrecht – inclusief eigen logo, kleuren, favicon en teksten.
+- Een beheerder van gebied A kan op geen enkele manier gegevens van gebied B zien of wijzigen; `npm run db:test` slaagt.
+- De superadmin kan op `/superadmin` winkelgebieden aanmaken, domeinen koppelen, beheerders per gebied aanstellen en elk gebied beheren.
+- Bezoekers kunnen zonder account kado's bekijken, op hun lijstje zetten, delen en reserveren; winkels en klant krijgen echte mails.
+- Winkeliers loggen in via een mail-link, plaatsen producten met een foto en vinken reserveringen af.
 - Design, Nederlandse teksten, sneeuw en mobiele navigatie zijn onveranderd.
 
 ---
 
 ## Na het plakken: zelf instellen
-1. **Resend**: maak een account op https://resend.com, voeg je domein toe (bv. `connect-create.nl` of een domein voor de winkelstraat) en zet de DNS-records die Resend geeft. Maak een API-key en zet die als `RESEND_API_KEY`. Zet `MAIL_FROM` op bv. `Windowshoppen <kado@jouwdomein.nl>`.
-   *Zonder geverifieerd domein kan Resend alleen naar je eigen account-e-mailadres sturen.*
-2. **Beheerder**: `lgawi@connect-create.nl` staat al in `db/seed.sql` (wachtwoord alleen als versleutelde hash). Wijzig het wachtwoord na de eerste keer inloggen.
-3. Vul in Admin → Instellingen → Privacy de echte gegevens in (vereniging, adres, KvK, contact).
+1. **Domeinen**: voeg `shoppenkempenaer.nl`, `shoppenmijdrecht.nl` (en `www.`-varianten) toe in Vercel → Project → Domains. Koppel ze in `/superadmin` aan het juiste winkelgebied.
+2. **Resend**: verifieer elk domein in Resend (DNS-records), maak een API-key (`RESEND_API_KEY`) en zet `MAIL_FROM="Windowshoppen <kado@{domain}>"`.
+3. **Superadmin**: `lgawi@connect-create.nl` staat in `db/seed.sql` (wachtwoord alleen als hash; maak de seed met `SUPER_ADMIN_PASSWORD='…' npm run db:seed-sql`). Wijzig het wachtwoord na de eerste keer inloggen.
+4. Vul per gebied in Beheer → Instellingen de privacygegevens in (vereniging, adres, KvK, contact) en stel beheerders aan.
