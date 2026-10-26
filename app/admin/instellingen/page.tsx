@@ -6,7 +6,8 @@ import { actions, getDB, useDB } from "@/lib/store"
 import type { Database, SiteSettings } from "@/lib/types"
 import { Field, inputCls, Switch } from "@/components/forms"
 import { toast } from "@/components/Toast"
-import { cn } from "@/lib/utils"
+import { cn, isValidEmail } from "@/lib/utils"
+import { hashPassword } from "@/lib/password"
 import { Card, PageTitle } from "../ui"
 
 const PRESETS: { name: string; colors: SiteSettings["colors"] }[] = [
@@ -40,7 +41,6 @@ export default function SettingsPage() {
   const dirty = JSON.stringify({ ...s, updatedAt: "" }) !== JSON.stringify({ ...db.settings, updatedAt: "" })
 
   const save = () => {
-    if (s.adminPassword.length < 6) return toast("Kies een wachtwoord van minimaal 6 tekens")
     actions.updateSettings(s)
     toast("Instellingen opgeslagen ✨")
   }
@@ -239,9 +239,7 @@ export default function SettingsPage() {
 
       <Card>
         <h2 className="mb-4 text-lg font-bold">Beveiliging & data</h2>
-        <Field label="Admin-wachtwoord (demo)" hint="In de live-versie log je in met een inloglink per e-mail">
-          <input type="text" value={s.adminPassword} onChange={(e) => set("adminPassword", e.target.value)} className={inputCls} />
-        </Field>
+        <AdminAccount />
         <div className="mt-4 flex flex-wrap gap-2">
           <button onClick={exportData} className="flex h-11 items-center gap-2 rounded-xl bg-stone-100 px-4 text-sm font-bold">
             <Download className="h-4 w-4" /> Exporteer alles (JSON)
@@ -275,6 +273,41 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Inloggegevens van de beheerder. Wordt los opgeslagen; het wachtwoord alleen als hash. */
+function AdminAccount() {
+  const db = useDB()
+  const [email, setEmail] = useState(db.settings.adminEmail)
+  const [pw, setPw] = useState("")
+  const [pw2, setPw2] = useState("")
+  const save = async () => {
+    if (!isValidEmail(email)) return toast("Vul een geldig e-mailadres in")
+    if (pw && pw.length < 8) return toast("Kies een wachtwoord van minimaal 8 tekens")
+    if (pw !== pw2) return toast("De wachtwoorden zijn niet gelijk")
+    actions.updateSettings({ adminEmail: email.trim(), ...(pw ? { adminPasswordHash: await hashPassword(pw) } : {}) })
+    setPw("")
+    setPw2("")
+    toast("Inloggegevens bijgewerkt")
+  }
+  return (
+    <div className="space-y-3">
+      <Field label="E-mailadres beheerder">
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" className={inputCls} />
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Nieuw wachtwoord" hint="Leeg laten = niet wijzigen">
+          <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" className={inputCls} />
+        </Field>
+        <Field label="Herhaal wachtwoord" hint={"\u00a0"}>
+          <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" className={inputCls} />
+        </Field>
+      </div>
+      <button onClick={save} className="h-11 rounded-xl bg-primary px-4 text-sm font-bold text-white">
+        Inloggegevens opslaan
+      </button>
     </div>
   )
 }

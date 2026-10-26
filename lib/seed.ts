@@ -238,7 +238,7 @@ const products: Product[] = Object.entries(productSeeds).flatMap(([shopId, list]
   })),
 )
 
-export const DB_VERSION = 1
+export const DB_VERSION = 2
 
 export function createSeed(): Database {
   return {
@@ -283,7 +283,9 @@ export function createSeed(): Database {
         kvk: "00000000",
         retentionDays: 30,
       },
-      adminPassword: "kerst2026",
+      adminEmail: "lgawi@connect-create.nl",
+      // SHA-256 van "windowshoppen:" + wachtwoord. Wijzig het wachtwoord via Admin → Instellingen.
+      adminPasswordHash: "692cc947c87c007aa6b742675a8785162d1c13d0e8017d8043fb548f63cccd4c",
       updatedAt: now,
     },
     shops,

@@ -1,6 +1,8 @@
 // Genereert db/seed.sql uit de demo-data in lib/seed.ts.
-// Gebruik: npm run db:seed-sql   →   psql "$DATABASE_URL" -f db/seed.sql
+// Gebruik: ADMIN_PASSWORD='…' npm run db:seed-sql   →   psql "$DATABASE_URL" -f db/seed.sql
+// Het wachtwoord komt alleen als bcrypt-hash in de SQL terecht.
 import { writeFileSync } from "node:fs"
+import bcrypt from "bcryptjs"
 import { createSeed } from "../lib/seed"
 
 const q = (v: unknown): string => {
@@ -51,9 +53,13 @@ from shops where slug = ${q(shop.slug)};`,
   out.push("")
 }
 
+const adminPw = process.env.ADMIN_PASSWORD
+// pgcrypto herkent het $2a$-voorvoegsel; bcryptjs maakt $2b$ (zelfde algoritme)
+const adminHash = adminPw ? bcrypt.hashSync(adminPw, 12).replace(/^\$2b\$/, "$2a$") : null
+if (!adminPw) console.warn("Let op: ADMIN_PASSWORD niet gezet; de beheerder krijgt geen wachtwoord (alleen inloglink).")
 out.push(
-  "-- Beheerder: vervang door je eigen e-mailadres; daarmee log je in via een inloglink.",
-  `insert into users (email, name, role) values ('admin@example.nl', 'Beheerder', 'admin');`,
+  "-- Beheerder (wachtwoord als bcrypt-hash; wijzig het na de eerste keer inloggen).",
+  `insert into users (email, name, role, password_hash) values (${q(s.adminEmail)}, 'Beheerder', 'admin', ${q(adminHash)});`,
   "",
   "commit;",
   "",

@@ -67,25 +67,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 }
 
 function AdminLogin() {
+  const [email, setEmail] = useState("")
   const [pw, setPw] = useState("")
   const [err, setErr] = useState("")
+  const [busy, setBusy] = useState(false)
   return (
     <div className="starry flex min-h-dvh items-center justify-center bg-primary px-4">
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault()
-          setErr(sessionActions.loginAdmin(pw) ?? "")
+          setBusy(true)
+          setErr((await sessionActions.loginAdmin(email, pw)) ?? "")
+          setBusy(false)
         }}
         className="w-full max-w-sm space-y-4 rounded-3xl bg-white p-6 shadow-2xl"
       >
         <p className="text-center text-4xl">🔑</p>
         <h1 className="text-center font-display text-2xl font-semibold text-primary">Beheerder</h1>
-        <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Wachtwoord" className={inputCls} autoFocus />
+        <input type="email" inputMode="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mailadres" className={inputCls} autoFocus required />
+        <input type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Wachtwoord" className={inputCls} required />
         {err && <p className="text-sm font-semibold text-accent">{err}</p>}
-        <button className="h-12 w-full rounded-2xl bg-accent font-bold text-white">Inloggen</button>
-        <p className="rounded-xl bg-gold-soft p-3 text-center text-xs">
-          Demo-wachtwoord: <code className="font-bold">kerst2026</code>
-        </p>
+        <button disabled={busy} className="h-12 w-full rounded-2xl bg-accent font-bold text-white disabled:opacity-60">Inloggen</button>
         <Link href="/" className="block text-center text-xs text-stone-500">
           ← Terug naar de site
         </Link>

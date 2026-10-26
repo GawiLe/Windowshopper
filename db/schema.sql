@@ -11,8 +11,13 @@
 --   * Opschonen     → Vercel Cron roept /api/cron aan, die de functies onderaan uitvoert
 -- Bezoekers hebben GEEN account: hun lijstje leeft in de browser / deel-link.
 --
+-- Mail: via Resend (https://resend.com), aangeroepen vanuit de server actions.
+--
 -- De tabellen spiegelen de types in lib/types.ts (camelCase → snake_case, prijzen in centen).
 -- ---------------------------------------------------------------------
+
+-- pgcrypto: voor bcrypt-wachtwoordcontrole van de beheerder (crypt / gen_salt)
+create extension if not exists pgcrypto;
 
 -- ---------- Instellingen (precies 1 rij) -------------------------------
 create table site_settings (
@@ -63,12 +68,17 @@ create table shops (
   created_at          timestamptz not null default now()
 );
 
--- ---------- Gebruikers & inloggen (magic link) -------------------------
+-- ---------- Gebruikers & inloggen ---------------------------------------
 -- Admin en winkeliers. Een winkel kan meerdere gebruikers hebben (bv. eigenaar + medewerker).
+-- Beheerder: e-mail + wachtwoord (bcrypt in password_hash). Winkeliers: inloglink per e-mail
+-- (password_hash leeg), of optioneel ook een wachtwoord.
+--   Controleren:  select * from users where lower(email) = lower($1) and password_hash = crypt($2, password_hash)
+--   Wijzigen:     update users set password_hash = crypt($2, gen_salt('bf', 12)) where id = $1
 create table users (
-  id          uuid primary key default gen_random_uuid(),
-  email       text not null,
-  name        text not null default '',
+  id             uuid primary key default gen_random_uuid(),
+  email          text not null,
+  name           text not null default '',
+  password_hash  text,
   role        text not null check (role in ('admin', 'shop')),
   shop_id     uuid references shops(id) on delete cascade,
   created_at  timestamptz not null default now(),
@@ -76,6 +86,14 @@ create table users (
   constraint shop_user_has_shop check (role = 'admin' or shop_id is not null)
 );
 create unique index users_email_idx on users (lower(email));
+
+-- Mislukte inlogpogingen (rem op wachtwoord raden: bv. max. 5 per 15 min per e-mail)
+create table login_attempts (
+  email       text not null,
+  ip          text,
+  created_at  timestamptz not null default now()
+);
+create index login_attempts_idx on login_attempts (lower(email), created_at);
 
 -- Eenmalige inloglinks. Sla alleen een hash van het token op (sha256), nooit het token zelf.
 create table login_tokens (
@@ -304,6 +322,7 @@ begin
   delete from reservations where status <> 'reserved' and created_at < now() - make_interval(days => days);
   delete from email_log    where created_at < now() - make_interval(days => days);
   delete from login_tokens where expires_at < now();
+  delete from login_attempts where created_at < now() - interval '1 day';
   delete from sessions     where expires_at < now();
 end $$;
 

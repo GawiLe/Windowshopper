@@ -4,20 +4,34 @@ Een feestelijke, mobiel-first multi-winkel webshop voor de decembermaand. Winkel
 winkelgebied plaatsen elk maximaal 20 kadotips; bezoekers windowshoppen door de online straat,
 maken zonder account een kadolijstje, laten producten een dag reserveren en halen ze op in het dorp.
 
-## Starten
+## Starten op je laptop
+Nodig: [Node.js](https://nodejs.org) versie 20 of hoger (LTS).
+
+**Mac (Terminal)** – zip uitgepakt in Downloads:
 ```bash
+cd ~/Downloads/windowshopper
 npm install
-npm run dev     # http://localhost:3000
+npm run dev
 ```
+**Windows (PowerShell):**
+```powershell
+cd $HOME\Downloads\windowshopper
+npm install
+npm run dev
+```
+Open daarna http://localhost:3000. Stoppen: `Ctrl + C`.
+
+Mails echt versturen? Maak een bestand `.env.local` (zie `.env.example`) met `RESEND_API_KEY` en `MAIL_FROM`.
 
 | Rol | Waar | Demo-inlog |
 |---|---|---|
 | Bezoeker | `/` | geen account nodig |
 | Winkelier | `/winkelier` | kies winkel + code (bv. De Boekenhoek → `boek2026`; alle codes staan op het inlogscherm) |
-| Beheerder | `/admin` | wachtwoord `kerst2026` |
+| Beheerder | `/admin` | `lgawi@connect-create.nl` + het afgesproken wachtwoord (wijzigen via Instellingen) |
 
-> De demo bewaart alles in de browser (localStorage). Mails worden niet echt verstuurd maar
-> verschijnen in **Admin → Mails**. Zie [`docs/V0-MIGRATIE.md`](docs/V0-MIGRATIE.md) om live te gaan
+> De demo bewaart alles in de browser (localStorage). Mails gaan via [Resend](https://resend.com)
+> zodra `RESEND_API_KEY` (en `MAIL_FROM`) in `.env.local` staan; zonder sleutel verschijnen ze alleen
+> in **Admin → Mails**. **Naar v0?** Upload de zip en plak [`V0-PROMPT.md`](V0-PROMPT.md). Zie [`docs/V0-MIGRATIE.md`](docs/V0-MIGRATIE.md) om live te gaan
 > met **Neon** (database), Vercel Blob (foto's) en Resend (mail). De database staat in
 > [`db/schema.sql`](db/schema.sql), demo-data in [`db/seed.sql`](db/seed.sql) (`npm run db:seed-sql`).
 

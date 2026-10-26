@@ -10,9 +10,9 @@ winkeliers op hun eigen telefoon heb je een gedeelde database, inloggen, foto-op
 | Hosting | Vercel (via v0) | Next.js |
 | Database | **Neon** Postgres (regio **EU – Frankfurt**) | Koppelen via Vercel Marketplace → `DATABASE_URL` wordt automatisch gezet |
 | Database-driver | `@neondatabase/serverless` | Werkt in server actions en route handlers |
-| Inloggen | Eigen inloglink per e-mail | Tabellen `users`, `login_tokens`, `sessions` staan al in het schema |
+| Inloggen | Beheerder: e-mail + wachtwoord (bcrypt via pgcrypto). Winkeliers: inloglink per e-mail | Tabellen `users`, `login_tokens`, `sessions`, `login_attempts` staan al in het schema |
 | Foto's & logo's | **Vercel Blob** | In de database staan alleen URL's |
-| E-mail | **Resend** | Teksten staan klaar in `lib/emails.ts` |
+| E-mail | **[Resend](https://resend.com)** | Werkt al in de demo via `app/api/mail/route.ts`; teksten in `lib/emails.ts`, HTML in `lib/mail-html.ts` |
 | Opschonen (AVG) | **Vercel Cron** → `/api/cron` | Roept `expire_reservations()` en `purge_personal_data()` aan |
 
 > Neon is "gewone" Postgres. Er is geen ingebouwde login of Row Level Security op basis van
@@ -28,8 +28,9 @@ winkeliers op hun eigen telefoon heb je een gedeelde database, inloggen, foto-op
    psql "$DATABASE_URL" -f db/schema.sql
    psql "$DATABASE_URL" -f db/seed.sql     # optioneel: de demo-winkels
    ```
-   Pas in `db/seed.sql` eerst `admin@example.nl` aan naar je eigen e-mailadres.
-   Na wijzigingen in `lib/seed.ts` maak je de seed opnieuw met `npm run db:seed-sql`.
+   De beheerder `lgawi@connect-create.nl` staat er al in (wachtwoord alleen als bcrypt-hash).
+   Na wijzigingen in `lib/seed.ts` maak je de seed opnieuw met
+   `ADMIN_PASSWORD='…' npm run db:seed-sql`.
 4. **Env-variabelen**: zie `.env.example` (`DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, `RESEND_API_KEY`,
    `MAIL_FROM`, `NEXT_PUBLIC_SITE_URL`, `AUTH_SECRET`, `CRON_SECRET`).
 5. **Packages**: `npm i @neondatabase/serverless @vercel/blob resend`
@@ -93,17 +94,18 @@ export async function reserve(input: { name: string; email: string; phone: strin
 `select expire_reservations(); select purge_personal_data();`.
 
 ## Prompt voor v0
-> "Dit is een werkende Next.js-app met lokale opslag in `lib/store.ts`. Koppel een **Neon**-database
-> volgens `db/schema.sql` en `docs/V0-MIGRATIE.md`: vervang `useDB`/`actions` door queries met
-> `@neondatabase/serverless` in server components en server actions, met toegangscontrole op
-> `shop_id` uit de sessie. Bouw de inloglink-login voor `/winkelier` en `/admin` met de tabellen
-> `users`, `login_tokens` en `sessions`. Upload foto's naar Vercel Blob, verstuur de mails uit
-> `lib/emails.ts` met Resend en voeg `/api/cron` toe voor het opschonen. Laat het kadolijstje
-> van bezoekers in localStorage. Behoud het design."
+Zie [`V0-PROMPT.md`](../V0-PROMPT.md) in de hoofdmap: die kun je in zijn geheel in v0 plakken.
+
+## Resend instellen
+1. Account op https://resend.com → **Domains** → voeg je domein toe en zet de DNS-records (SPF/DKIM).
+2. **API Keys** → maak een key met "Sending access" → `RESEND_API_KEY`.
+3. `MAIL_FROM="Windowshoppen <kado@jouwdomein.nl>"` (moet op het geverifieerde domein staan).
+4. Zonder geverifieerd domein kun je testen met `onboarding@resend.dev`, maar dan alleen naar het
+   e-mailadres van je eigen Resend-account.
 
 ## Privacy-checklist voor livegang
 - [ ] Gegevens in de privacyverklaring invullen (Admin → Instellingen → Privacy) en laten checken.
-- [ ] Verwerkersovereenkomsten (DPA) afsluiten met Neon, Vercel en Resend.
+- [ ] Verwerkersovereenkomsten (DPA) afsluiten met Neon, Vercel en Resend (Resend: EU-regio kiezen bij het domein).
 - [ ] Neon-project in EU-regio (Frankfurt); Vercel-functies ook in EU (`fra1`).
 - [ ] Cron voor opschonen actief.
 - [ ] Afspraken met deelnemende winkels vastleggen (gegevens alleen voor de reservering gebruiken).

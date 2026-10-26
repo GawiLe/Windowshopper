@@ -92,6 +92,9 @@ export interface EmailLog {
   subject: string
   body: string
   kind: "shop_new_reservation" | "customer_confirmation" | "customer_list" | "shop_welcome"
+  /** sent = via Resend verstuurd, demo = geen Resend-sleutel ingesteld, failed = fout bij versturen */
+  status?: "pending" | "sent" | "demo" | "failed"
+  error?: string
   createdAt: string
 }
 
@@ -124,7 +127,9 @@ export interface SiteSettings {
     kvk: string
     retentionDays: number
   }
-  adminPassword: string // alleen voor de demo
+  /** beheerder: e-mail + SHA-256-hash van het wachtwoord (demo). Live: bcrypt in users.password_hash */
+  adminEmail: string
+  adminPasswordHash: string
   updatedAt: string
 }
 

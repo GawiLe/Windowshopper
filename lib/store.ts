@@ -9,6 +9,7 @@ import { createSeed, DB_VERSION } from "./seed"
 import type { Database, EmailLog, ListEntry, Product, Reservation, ReservationStatus, Shop, SiteSettings } from "./types"
 import { customerConfirmationEmail, shopReservationEmail } from "./emails"
 import { pickupCode, uid } from "./utils"
+import { hashPassword } from "./password"
 
 const DB_KEY = "ws-db-v1"
 const LIST_KEY = "ws-list-v1"
@@ -114,8 +115,36 @@ function adjustStock(products: Product[], productId: string, delta: number): Pro
   )
 }
 
-function logEmail(db: Database, mail: Omit<EmailLog, "id" | "createdAt">): Database {
-  return { ...db, emails: [{ ...mail, id: uid("mail"), createdAt: stamp() }, ...db.emails].slice(0, 200) }
+// Mails die nog naar /api/mail (Resend) moeten. Ze worden eerst gelogd en daarna verstuurd.
+const outbox: { mail: EmailLog; replyTo?: string }[] = []
+
+type NewMail = Omit<EmailLog, "id" | "createdAt" | "status"> & { replyTo?: string }
+
+function logEmail(db: Database, { replyTo, ...mail }: NewMail): Database {
+  const entry: EmailLog = { ...mail, id: uid("mail"), createdAt: stamp(), status: "pending" }
+  outbox.push({ mail: entry, replyTo })
+  return { ...db, emails: [entry, ...db.emails].slice(0, 200) }
+}
+
+function setEmailStatus(id: string, status: EmailLog["status"], error?: string) {
+  dbStore.set((db) => ({ ...db, emails: db.emails.map((m) => (m.id === id ? { ...m, status, error } : m)) }))
+}
+
+function flushOutbox() {
+  const { settings } = dbStore.get()
+  const brand = { siteName: settings.siteName, areaName: settings.areaName, primary: settings.colors.primary, gold: settings.colors.gold }
+  for (const { mail, replyTo } of outbox.splice(0)) {
+    fetch("/api/mail", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: mail.kind, to: mail.to, subject: mail.subject, body: mail.body, replyTo, brand }),
+    })
+      .then(async (res) => {
+        const data = (await res.json().catch(() => ({}))) as { status?: EmailLog["status"]; error?: string }
+        setEmailStatus(mail.id, data.status ?? "failed", data.error)
+      })
+      .catch(() => setEmailStatus(mail.id, "failed", "Geen verbinding met de mailserver"))
+  }
 }
 
 // ---------- acties ----------
@@ -228,7 +257,13 @@ export const actions = {
       for (const r of created) {
         for (const i of r.items) next = { ...next, products: adjustStock(next.products, i.productId, -i.quantity) }
         const shop = d.shops.find((s) => s.id === r.shopId)
-        if (shop) next = logEmail(next, { ...shopReservationEmail(d.settings, shop, r), kind: "shop_new_reservation" })
+        if (shop) {
+          next = logEmail(next, {
+            ...shopReservationEmail(d.settings, shop, r),
+            kind: "shop_new_reservation",
+            replyTo: r.customerEmail, // winkel kan direct op de mail antwoorden
+          })
+        }
       }
       if (created.length) {
         next = logEmail(next, {
@@ -238,6 +273,7 @@ export const actions = {
       }
       return next
     })
+    flushOutbox()
     return created
   },
 
@@ -282,8 +318,9 @@ export const actions = {
     })
   },
 
-  logEmail(mail: Omit<EmailLog, "id" | "createdAt">) {
+  logEmail(mail: NewMail) {
     dbStore.set((db) => logEmail(db, mail))
+    flushOutbox()
   },
 
   resetDemo() {
@@ -366,8 +403,10 @@ export const sessionActions = {
     sessionStore.set(() => ({ role: "shop", shopId }))
     return null
   },
-  loginAdmin(password: string): string | null {
-    if (password !== dbStore.get().settings.adminPassword) return "Onjuist wachtwoord"
+  async loginAdmin(email: string, password: string): Promise<string | null> {
+    const { adminEmail, adminPasswordHash } = dbStore.get().settings
+    const ok = email.trim().toLowerCase() === adminEmail.toLowerCase() && (await hashPassword(password)) === adminPasswordHash
+    if (!ok) return "E-mailadres of wachtwoord klopt niet"
     sessionStore.set(() => ({ role: "admin" }))
     return null
   },

@@ -138,7 +138,7 @@ insert into products (shop_id, title, description, price_cents, images, emoji, c
 select id, 'Kerstsokken giftbox', 'Drie paar vrolijke kerstsokken in een cadeaudoos.', 1995, '{}'::text[], '🧦', 'Mode & sieraden', '{}'::text[], 'toggle', 0, true, true, true, 3
 from shops where slug = 'mode-merel';
 
--- Beheerder: vervang door je eigen e-mailadres; daarmee log je in via een inloglink.
-insert into users (email, name, role) values ('admin@example.nl', 'Beheerder', 'admin');
+-- Beheerder (wachtwoord als bcrypt-hash; wijzig het na de eerste keer inloggen).
+insert into users (email, name, role, password_hash) values ('lgawi@connect-create.nl', 'Beheerder', 'admin', '$2a$12$K5egPAVgyqub0O9nHWna2uvCrvmZb1zBJzGWGHgptyvSQysDu6VU.');
 
 commit;

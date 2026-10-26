@@ -158,7 +158,7 @@ export function ShopForm({ shop, admin = false, onSaved }: { shop: Shop; admin?:
             <Field label="Breedtegraad (optioneel)" hint="Voor een echte kaart later">
               <input inputMode="decimal" value={s.lat ?? ""} onChange={(e) => set("lat", e.target.value ? Number(e.target.value) : null)} className={inputCls} />
             </Field>
-            <Field label="Lengtegraad (optioneel)" hint="&nbsp;">
+            <Field label="Lengtegraad (optioneel)" hint={"\u00a0"}>
               <input inputMode="decimal" value={s.lng ?? ""} onChange={(e) => set("lng", e.target.value ? Number(e.target.value) : null)} className={inputCls} />
             </Field>
           </div>
