@@ -4,7 +4,7 @@ Upload de zip van dit project in v0 en plak **alles tussen de twee lijnen** als 
 
 ---
 
-Dit project is een werkende Next.js-app (App Router, React 19, Tailwind v4, lucide-react): **"Windowshoppen De Kempenaerstraat"**, een mobiel-first kerstwebshop van meerdere winkels uit één winkelgebied. Alles werkt al, maar de data staat nog in `localStorage` van de browser (`lib/store.ts`). Maak er een echte, live app van met een **Neon**-database, **Resend** voor e-mail en **Vercel Blob** voor foto's. **Behoud het bestaande design, de teksten (Nederlands) en de mobiele bediening precies zoals ze zijn.**
+Dit project is een werkende Next.js-app (App Router, React 19, Tailwind v4, lucide-react, Leaflet): **"Windowshoppen – Winkelgebied De Kempenaer"** (Oegstgeest), een mobiel-first kerstwebshop van meerdere winkels uit één winkelgebied. Alles werkt al, maar de data staat nog in `localStorage` van de browser (`lib/store.ts`). Maak er een echte, live app van met een **Neon**-database, **Resend** voor e-mail en **Vercel Blob** voor foto's. **Behoud het bestaande design, de teksten (Nederlands) en de mobiele bediening precies zoals ze zijn.** De huisstijl komt uit het logo in `public/brand/` (groen #023934, goud #c09a5e, Playfair Display + Jost). Gebruik geen emoji's; iconen komen uit `lucide-react` via `lib/icons.ts`.
 
 Lees eerst `README.md`, `docs/V0-MIGRATIE.md`, `db/schema.sql`, `lib/types.ts` en `lib/store.ts`.
 
@@ -35,17 +35,22 @@ Lees eerst `README.md`, `docs/V0-MIGRATIE.md`, `db/schema.sql`, `lib/types.ts` e
 - Log elke verstuurde mail in `email_log` (zonder mailinhoud) en toon dat overzicht in Admin → Mails.
 - Verwijder daarna `app/api/mail/route.ts`: die publieke route is alleen voor de demo.
 
-## 5. Foto's
+## 5. Kaart
+- `components/ShopMap.tsx` (Leaflet + CARTO/OpenStreetMap-tegels) blijft zoals hij is. Winkels hebben `lat`/`lng`.
+- Zet de coördinaten op de **server** zodra de beheerder een winkel opslaat zonder `lat`/`lng` (of met een gewijzigd adres): roep de PDOK Locatieserver aan (`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=<adres plaats>&fq=type:adres&rows=1&fl=centroide_ll`, zie `geocodeAddress()` in `lib/geo.ts`) en sla het resultaat op. Verwijder daarna het automatisch opzoeken in de browser uit `ShopMap` (de beheerder kan de pin nog steeds verplaatsen door op de kaart te tikken).
+
+## 6. Foto's
 - Productfoto's (max. 4) en logo's: verklein in de browser met de bestaande `resizeImage()` uit `lib/utils.ts`, upload naar Vercel Blob onder `products/<shop_id>/…` of `logos/<shop_id>/…` en sla de URL's op. Controleer in de upload-actie dat de winkelier bij die `shop_id` hoort. Behoud de knoppen "Maak foto" (camera) en "Kies uit galerij".
 
-## 6. Opschonen (privacy)
+## 7. Opschonen (privacy)
 - Voeg `app/api/cron/route.ts` toe die `Authorization: Bearer ${CRON_SECRET}` controleert en `select expire_reservations(); select purge_personal_data();` uitvoert.
 - Voeg `vercel.json` toe met `{"crons":[{"path":"/api/cron","schedule":"*/10 * * * *"}]}`.
 
-## 7. Klaar is als
+## 8. Klaar is als
 - Bezoekers kunnen zonder account kado's bekijken, op hun lijstje zetten, delen en reserveren; winkels en klant krijgen echte mails via Resend.
 - Een winkelier logt in via een mail-link op zijn telefoon, plaatst producten met een foto, beheert voorraad en vinkt reserveringen af als opgehaald; hij ziet nooit gegevens van andere winkels.
 - De beheerder logt in met e-mail en wachtwoord en kan winkels toevoegen, wijzigen en verwijderen en alle instellingen, kleuren en teksten aanpassen; die wijzigingen zijn direct zichtbaar voor iedereen.
+- De kaart toont alle winkels op hun echte adres met pins in huisstijl.
 - Design, Nederlandse teksten, sneeuw en mobiele navigatie zijn onveranderd.
 
 ---

@@ -55,7 +55,7 @@ export default function ReservationsPage() {
 
       {list.length === 0 ? (
         <p className="mt-6 rounded-2xl bg-white p-8 text-center text-sm text-stone-500 shadow-sm">
-          {tab === "open" ? "Nog geen reserveringen. Je krijgt een mail zodra er iets binnenkomt ✉️" : "Niets te zien hier."}
+          {tab === "open" ? "Nog geen reserveringen. Je krijgt een mail zodra er iets binnenkomt." : "Niets te zien hier."}
         </p>
       ) : (
         <div className="mt-5 space-y-6">

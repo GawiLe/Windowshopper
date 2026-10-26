@@ -11,7 +11,8 @@ import { hashPassword } from "@/lib/password"
 import { Card, PageTitle } from "../ui"
 
 const PRESETS: { name: string; colors: SiteSettings["colors"] }[] = [
-  { name: "Dennengroen & goud", colors: { primary: "#1f4d3a", accent: "#b3262e", gold: "#c9a24a", background: "#fbf6ec", text: "#2a2420" } },
+  { name: "De Kempenaer (huisstijl)", colors: { primary: "#023934", accent: "#9b2c2c", gold: "#c09a5e", background: "#f8f4ec", text: "#1f2a28" } },
+  { name: "Dennengroen & rood", colors: { primary: "#1f4d3a", accent: "#b3262e", gold: "#c9a24a", background: "#fbf6ec", text: "#2a2420" } },
   { name: "Kerstrood", colors: { primary: "#7a1f24", accent: "#1f4d3a", gold: "#d4af37", background: "#fdf8f3", text: "#2a2020" } },
   { name: "Winternacht", colors: { primary: "#1c2c4c", accent: "#b8323a", gold: "#d6b25e", background: "#f6f7fb", text: "#1d2230" } },
   { name: "Warm chalet", colors: { primary: "#5a3d2b", accent: "#a8322d", gold: "#c99a43", background: "#fbf4ea", text: "#2c221b" } },
@@ -42,7 +43,7 @@ export default function SettingsPage() {
 
   const save = () => {
     actions.updateSettings(s)
-    toast("Instellingen opgeslagen ✨")
+    toast("Instellingen opgeslagen")
   }
 
   const exportData = () => {
@@ -104,7 +105,7 @@ export default function SettingsPage() {
       <Card>
         <h2 className="mb-1 text-lg font-bold">Kleuren</h2>
         <p className="mb-4 text-sm text-stone-500">Wijzigingen zie je meteen. Kies een thema of stel zelf in.</p>
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {PRESETS.map((p) => (
             <button
               key={p.name}
@@ -151,7 +152,7 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="mt-4">
-          <Switch checked={s.snowEnabled} onChange={(v) => { set("snowEnabled", v); actions.updateSettings({ snowEnabled: v }) }} label="❄ Sneeuwval" description="Vallende sneeuw over de webshop" />
+          <Switch checked={s.snowEnabled} onChange={(v) => { set("snowEnabled", v); actions.updateSettings({ snowEnabled: v }) }} label="Sneeuwval" description="Vallende sneeuw over de webshop" />
         </div>
       </Card>
 

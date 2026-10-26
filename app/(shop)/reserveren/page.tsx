@@ -2,10 +2,11 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { AlertTriangle, ArrowLeft, CheckCircle2, Lock } from "lucide-react"
+import { AlertTriangle, ArrowLeft, CalendarX, CheckCircle2, Lock } from "lucide-react"
 import { actions, encodeList, useDB, useHydrated, useList } from "@/lib/store"
-import { ShopLogo } from "@/components/Visuals"
-import { cn, euro, formatDate, formatDateTime, isAvailable, isOpenOn, isValidEmail, todayISO } from "@/lib/utils"
+import { IconBadge, ShopLogo } from "@/components/Visuals"
+import { reserveStatus } from "@/lib/selectors"
+import { cn, euro, formatDate, formatDateTime, isOpenOn, isValidEmail, todayISO } from "@/lib/utils"
 import type { Reservation } from "@/lib/types"
 
 export default function ReservePage() {
@@ -14,15 +15,16 @@ export default function ReservePage() {
   const hydrated = useHydrated()
   const { settings } = db
 
-  const candidates = list
+  const onList = list
     .filter((e) => !e.checked)
     .map((e) => {
       const product = db.products.find((p) => p.id === e.productId)
       const shop = product && db.shops.find((s) => s.id === product.shopId)
-      return product && shop ? { entry: e, product, shop } : null
+      return product && shop ? { entry: e, product, shop, status: reserveStatus(db, product, shop) } : null
     })
     .filter((x): x is NonNullable<typeof x> => !!x)
-    .filter((x) => settings.reservationsEnabled && x.shop.allowReservations && x.product.reservable && isAvailable(x.product))
+  const candidates = onList.filter((x) => x.status.ok)
+  const notPossible = onList.filter((x) => !x.status.ok)
 
   const [excluded, setExcluded] = useState<Set<string>>(new Set())
   const [form, setForm] = useState({ name: "", email: "", phone: "", note: "", pickupDate: "" })
@@ -36,13 +38,15 @@ export default function ReservePage() {
 
   if (!candidates.length) {
     return (
-      <div className="px-4 pt-10 text-center">
-        <p className="text-5xl">🎁</p>
-        <h1 className="mt-3 font-display text-2xl font-semibold">Niets om te reserveren</h1>
-        <p className="mt-2 text-stone-600">Zet eerst kado&apos;s op je lijstje die gereserveerd kunnen worden.</p>
-        <Link href="/lijstje" className="mt-5 inline-block font-bold text-accent underline">
-          Naar mijn lijstje
-        </Link>
+      <div className="wrap pt-10">
+        <div className="max-w-lg">
+          <IconBadge icon={CalendarX} className="mx-0" />
+          <h1 className="mt-4 font-display text-2xl font-semibold text-primary">Niets om te reserveren</h1>
+          <p className="mt-2 text-stone-600">Zet eerst kado&apos;s op je lijstje die gereserveerd kunnen worden.</p>
+          <Link href="/lijstje" className="mt-5 inline-block font-semibold text-accent underline">
+            Naar mijn lijstje
+          </Link>
+        </div>
       </div>
     )
   }
@@ -77,7 +81,7 @@ export default function ReservePage() {
     setForm((f) => ({ ...f, [k]: e.target.value }))
 
   return (
-    <form onSubmit={submit} className="px-4 pt-5" noValidate>
+    <form onSubmit={submit} className="wrap max-w-3xl pt-6 lg:ml-[max(0px,calc((100vw-82rem)/2))]" noValidate>
       <Link href="/lijstje" className="inline-flex items-center gap-1 text-sm font-semibold text-stone-500">
         <ArrowLeft className="h-4 w-4" /> Terug naar lijstje
       </Link>
@@ -121,6 +125,22 @@ export default function ReservePage() {
           })}
         </ul>
         {errors.items && <ErrorText>{errors.items}</ErrorText>}
+        {notPossible.length > 0 && (
+          <div className="mt-3 rounded-xl bg-stone-50 p-3">
+            <p className="flex items-center gap-1.5 text-sm font-medium text-stone-600">
+              <CalendarX className="h-4 w-4" /> Niet te reserveren (wel in de winkel te koop)
+            </p>
+            <ul className="mt-2 space-y-1.5">
+              {notPossible.map(({ product, shop, status }) => (
+                <li key={product.id} className="flex items-center gap-2 text-sm text-stone-500">
+                  <ShopLogo shop={shop} size={24} />
+                  <span className="min-w-0 flex-1 truncate">{product.title}</span>
+                  <span className="shrink-0 text-xs">{!status.ok && status.reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Step>
 
       <Step n={2} title="Wanneer kom je ophalen?">
@@ -164,7 +184,7 @@ export default function ReservePage() {
             <input type="tel" inputMode="tel" value={form.phone} onChange={set("phone")} autoComplete="tel" className={inputCls} />
           </Field>
           <Field label="Opmerking (optioneel)">
-            <textarea value={form.note} onChange={set("note")} rows={2} maxLength={300} className={cn(inputCls, "h-auto py-3")} placeholder="Bijv. graag inpakken 🎀" />
+            <textarea value={form.note} onChange={set("note")} rows={2} maxLength={300} className={cn(inputCls, "h-auto py-3")} placeholder="Bijv. graag als cadeau inpakken" />
           </Field>
         </div>
       </Step>
@@ -228,10 +248,10 @@ function Confirmation({ reservations }: { reservations: Reservation[] }) {
   const db = useDB()
   const first = reservations[0]
   return (
-    <div className="px-4 pt-8">
-      <div className="text-center">
-        <CheckCircle2 className="mx-auto h-16 w-16 text-primary" />
-        <h1 className="mt-3 font-display text-3xl font-semibold text-primary">Gereserveerd! 🎉</h1>
+    <div className="wrap max-w-3xl pt-8 lg:ml-[max(0px,calc((100vw-82rem)/2))]">
+      <div>
+        <CheckCircle2 className="h-14 w-14 text-primary" strokeWidth={1.5} />
+        <h1 className="mt-3 font-display text-3xl font-semibold text-primary">Gereserveerd</h1>
         <p className="mt-2 text-stone-600">
           De winkels hebben een mail ontvangen. Je bevestiging is gestuurd naar <b>{first.customerEmail}</b>.
         </p>
@@ -270,7 +290,7 @@ function Confirmation({ reservations }: { reservations: Reservation[] }) {
         })}
       </ul>
       <p className="mt-4 rounded-2xl bg-gold-soft p-4 text-sm">
-        💡 Laat bij de winkel je ophaalcode zien. Gekocht? Vink het af op je lijstje!
+        Laat bij de winkel je ophaalcode zien. Gekocht? Vink het af op je lijstje!
       </p>
       <div className="mt-5 grid gap-2">
         <Link href="/lijstje" className="flex h-14 items-center justify-center rounded-2xl bg-primary font-bold text-white">

@@ -34,7 +34,7 @@ export default function AdminHome() {
             return (
               <li key={s.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <Link href={`/admin/winkels/${s.id}`} className="font-semibold">
-                  {s.emoji} {s.name}
+                  {s.name}
                 </Link>
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-24 overflow-hidden rounded-full bg-stone-100">

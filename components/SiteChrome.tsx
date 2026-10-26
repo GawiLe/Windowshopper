@@ -34,16 +34,15 @@ export function SiteHeader() {
 
   return (
     <header className="no-print sticky top-0 z-40 bg-primary text-white shadow-md">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="Naar de startpagina">
-          <span className="gold-border flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg [--card-bg:var(--c-primary)]">
-            🎄
-          </span>
-          <span className="min-w-0 leading-tight">
-            <span className="block truncate font-display text-[17px] font-semibold tracking-tight md:text-lg">
-              {settings.siteName}
+      <div className="wrap flex h-16 items-center justify-between gap-3 md:h-20">
+        <Link href="/" className="flex min-w-0 items-center gap-3" aria-label="Naar de startpagina">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/kempenaer-crest.svg" alt="" className="h-7 w-auto shrink-0 sm:h-9 md:h-11" />
+          <span className="min-w-0 border-l border-gold/40 pl-2.5 leading-tight sm:pl-3">
+            <span className="block truncate font-display text-[17px] font-semibold md:text-xl">{settings.siteName}</span>
+            <span className="block truncate text-[10px] font-medium uppercase tracking-[0.12em] text-gold sm:tracking-[0.22em] md:text-[11px]">
+              Winkelgebied {settings.areaName}
             </span>
-            <span className="gold-text block truncate text-[11px] font-bold uppercase tracking-[0.18em]">{settings.areaName}</span>
           </span>
         </Link>
 
@@ -129,12 +128,11 @@ export function SiteFooter() {
   return (
     <footer className="no-print mb-16 bg-primary text-white/85 md:mb-0">
       <div className="gold-line" />
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 text-sm md:grid-cols-3">
+      <div className="wrap grid gap-8 py-12 text-sm md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <p className="font-display text-lg text-white">
-            {settings.siteName} <span className="gold-text">{settings.areaName}</span>
-          </p>
-          <p className="mt-2 max-w-xs">{settings.footerText}</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/kempenaer-emblem.svg" alt={`Winkelgebied ${settings.areaName}, ${settings.town}`} className="h-28 w-auto" />
+          <p className="mt-4 max-w-sm">{settings.footerText}</p>
         </div>
         <div className="space-y-2">
           <p className="font-bold uppercase tracking-wider text-gold">Ontdekken</p>

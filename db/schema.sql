@@ -1,5 +1,5 @@
 -- =====================================================================
--- Windowshoppen De Kempenaerstraat – databaseschema voor Neon (Postgres 16+)
+-- Windowshoppen – Winkelgebied De Kempenaer – databaseschema voor Neon (Postgres 16+)
 -- =====================================================================
 -- Draai dit in de Neon SQL Editor (of: psql "$DATABASE_URL" -f db/schema.sql),
 -- daarna eventueel db/seed.sql voor de demo-winkels.
@@ -23,7 +23,7 @@ create extension if not exists pgcrypto;
 create table site_settings (
   id                     int primary key default 1 check (id = 1),
   site_name              text not null default 'Windowshoppen',
-  area_name              text not null default 'De Kempenaerstraat',
+  area_name              text not null default 'De Kempenaer',
   town                   text not null default 'Oegstgeest',
   hero_title             text not null default '',
   hero_subtitle          text not null default '',
@@ -35,7 +35,8 @@ create table site_settings (
   reservation_hours      int  not null default 24 check (reservation_hours between 1 and 168),
   reservations_enabled   boolean not null default true,
   snow_enabled           boolean not null default true,
-  colors                 jsonb not null default '{"primary":"#1f4d3a","accent":"#b3262e","gold":"#c9a24a","background":"#fbf6ec","text":"#2a2420"}',
+  map                    jsonb not null default '{"lat":52.1806,"lng":4.4706,"zoom":17}', -- middelpunt kaart
+  colors                 jsonb not null default '{"primary":"#023934","accent":"#9b2c2c","gold":"#c09a5e","background":"#f8f4ec","text":"#1f2a28"}',
   categories             text[] not null default array['Boeken & papier','Eten & drinken','Wonen & lifestyle','Kinderen & speelgoed','Bloemen & planten','Mode & sieraden','Beauty & verzorging','Overig'],
   privacy                jsonb not null default '{"controllerName":"","controllerAddress":"","contactEmail":"","kvk":"","retentionDays":30}',
   updated_at             timestamptz not null default now()
@@ -52,17 +53,15 @@ create table shops (
   category            text not null default 'Overig',
   logo_url            text,                        -- Vercel Blob URL
   cover_color         text not null default '#1f4d3a',
-  emoji               text not null default '🎁',
+  icon                text not null default 'gift',  -- sleutel uit lib/icons.ts
   address             text not null default '',
   phone               text not null default '',
   email               text not null,               -- ontvangt reserveringsmails
   website             text not null default '',
   instagram           text not null default '',
   opening_hours       jsonb not null default '[]', -- [{"day":0-6,"open":"09:30","close":"18:00"}]
-  map_x               numeric(5,2) not null default 50 check (map_x between 0 and 100), -- plek op de getekende kaart (%)
-  map_y               numeric(5,2) not null default 40 check (map_y between 0 and 100),
-  lat                 double precision,
-  lng                 double precision,
+  lat                 double precision check (lat between -90 and 90),    -- plek op de kaart; leeg = opzoeken via adres (PDOK)
+  lng                 double precision check (lng between -180 and 180),
   allow_reservations  boolean not null default true,
   active              boolean not null default true,
   created_at          timestamptz not null default now()
@@ -120,7 +119,7 @@ create table products (
   description  text not null default '' check (char_length(description) <= 800),
   price_cents  int  not null check (price_cents > 0),
   images       text[] not null default '{}' check (cardinality(images) <= 4), -- Vercel Blob URL's
-  emoji        text not null default '🎁',
+  icon         text not null default 'gift',   -- illustratie zolang er geen foto is (lib/icons.ts)
   category     text not null default 'Overig',
   tags         text[] not null default '{}',
   stock_mode   text not null default 'toggle' check (stock_mode in ('toggle', 'count')),

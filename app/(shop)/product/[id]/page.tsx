@@ -3,11 +3,11 @@
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useState } from "react"
-import { ArrowLeft, CalendarClock, Clock, MapPin, Share2 } from "lucide-react"
+import { ArrowLeft, CalendarClock, Clock, MapPin, PackageX, Share2 } from "lucide-react"
 import { useDB, useHydrated } from "@/lib/store"
 import { relatedProducts, shopProducts } from "@/lib/selectors"
 import { ListToggle, ProductRow } from "@/components/ProductCard"
-import { ProductImage, ShopLogo, StockBadge } from "@/components/Visuals"
+import { IconBadge, ProductImage, ShopLogo, StockBadge } from "@/components/Visuals"
 import { toast } from "@/components/Toast"
 import { cn, euro, isAvailable, openToday, stockLabel } from "@/lib/utils"
 
@@ -25,7 +25,7 @@ export default function ProductPage() {
     if (!hydrated) return <div className="h-[60vh]" />
     return (
       <div className="px-4 py-20 text-center">
-        <p className="text-5xl">🎁</p>
+        <IconBadge icon={PackageX} />
         <h1 className="mt-3 font-display text-2xl">Dit kado is niet (meer) te vinden</h1>
         <Link href="/winkelstraat" className="mt-4 inline-block font-bold text-accent underline">
           Terug naar alle kado&apos;s
@@ -55,8 +55,8 @@ export default function ProductPage() {
   }
 
   return (
-    <article className="md:grid md:grid-cols-2 md:gap-8 md:px-4 md:pt-6">
-      <div className="relative md:overflow-hidden md:rounded-3xl">
+    <article className="md:wrap md:grid md:grid-cols-2 md:gap-10 md:pt-8 lg:gap-14">
+      <div className="relative md:sticky md:top-28 md:self-start md:overflow-hidden md:rounded-3xl md:shadow-sm md:ring-1 md:ring-black/5">
         <div
           className="scrollbar-none flex aspect-square snap-x snap-mandatory overflow-x-auto bg-white"
           onScroll={(e) => {

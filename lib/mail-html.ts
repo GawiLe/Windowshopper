@@ -26,13 +26,12 @@ export function renderMailHtml(subject: string, body: string, brand: MailBrand) 
 <tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:18px;overflow:hidden">
 <tr><td style="background:${brand.primary};padding:22px 24px;color:#ffffff">
-<div style="font-size:22px">🎄</div>
 <div style="font-family:Georgia,serif;font-size:20px;font-weight:bold">${esc(brand.siteName)}</div>
 <div style="color:${brand.gold};font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase">${esc(brand.areaName)}</div>
 </td></tr>
 <tr><td style="height:3px;background:${brand.gold}"></td></tr>
 <tr><td style="padding:24px;font-size:15px">${paragraphs}</td></tr>
-<tr><td style="padding:16px 24px;background:#f4efe4;color:#7a6f60;font-size:12px;text-align:center">❄ Fijne feestdagen ❄</td></tr>
+<tr><td style="padding:16px 24px;background:#f4efe4;color:#7a6f60;font-size:12px;text-align:center">Fijne feestdagen</td></tr>
 </table>
 </td></tr></table>
 </body></html>`

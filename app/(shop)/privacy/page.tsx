@@ -7,8 +7,9 @@ export default function PrivacyPage() {
   const { settings } = useDB()
   const p = settings.privacy
   return (
-    <article className="px-4 pt-6">
-      <h1 className="font-display text-3xl font-semibold text-primary">Privacyverklaring</h1>
+    <article className="wrap pt-6">
+      <div className="max-w-3xl">
+      <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">Privacyverklaring</h1>
       <p className="mt-1 text-sm text-stone-500">Laatst bijgewerkt: {formatDate(settings.updatedAt.slice(0, 10), { day: "numeric", month: "long", year: "numeric" })}</p>
 
       <div className="mt-5 rounded-2xl bg-primary-soft p-4 text-[15px] leading-relaxed">
@@ -96,7 +97,17 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2>6. Verwerkers en beveiliging</h2>
+          <h2>6. De kaart</h2>
+          <p>
+            Op de kaart tonen we waar de winkels zitten. De kaartafbeeldingen worden geladen bij CARTO (kaartgegevens van
+            OpenStreetMap). Daarbij ziet die dienst, zoals bij elke website, je IP-adres; er worden geen cookies geplaatst en wij
+            delen geen andere gegevens. Winkeladressen worden omgezet naar een plek op de kaart via de adresdienst van de
+            Nederlandse overheid (PDOK); daarbij worden alleen winkeladressen verstuurd, nooit gegevens van bezoekers.
+          </p>
+        </section>
+
+        <section>
+          <h2>7. Verwerkers en beveiliging</h2>
           <p>
             We gebruiken zorgvuldig gekozen dienstverleners voor hosting, database en het versturen van e-mail. Met hen hebben we
             verwerkersovereenkomsten gesloten en de gegevens worden opgeslagen binnen de Europese Economische Ruimte. De website werkt
@@ -105,7 +116,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2>7. Jouw rechten</h2>
+          <h2>8. Jouw rechten</h2>
           <p>Je hebt het recht om:</p>
           <ul className="mt-1">
             <li>je gegevens in te zien, te laten corrigeren of te laten verwijderen;</li>
@@ -124,12 +135,13 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2>8. Wijzigingen</h2>
+          <h2>9. Wijzigingen</h2>
           <p>
             We kunnen deze verklaring aanpassen, bijvoorbeeld als de website verandert. De datum bovenaan laat zien wanneer dat voor
             het laatst is gebeurd.
           </p>
         </section>
+      </div>
       </div>
     </article>
   )

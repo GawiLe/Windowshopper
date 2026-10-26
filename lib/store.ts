@@ -161,6 +161,10 @@ export const actions = {
     })
   },
 
+  setShopLocation(id: string, lat: number, lng: number) {
+    dbStore.set((db) => ({ ...db, shops: db.shops.map((s) => (s.id === id ? { ...s, lat, lng } : s)) }))
+  },
+
   deleteShop(id: string) {
     dbStore.set((db) => ({
       ...db,

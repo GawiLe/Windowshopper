@@ -6,7 +6,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     <>
       <Snow />
       <SiteHeader />
-      <main className="mx-auto min-h-[60vh] w-full max-w-6xl pb-28 md:pb-12">{children}</main>
+      <main className="min-h-[60vh] w-full pb-28 md:pb-16">{children}</main>
       <SiteFooter />
       <BottomNav />
     </>

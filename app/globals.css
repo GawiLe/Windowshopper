@@ -2,11 +2,11 @@
 
 /* Kleuren worden live overschreven vanuit de admin-instellingen (zie components/ThemeVars.tsx) */
 :root {
-  --c-primary: #1f4d3a;
-  --c-accent: #b3262e;
-  --c-gold: #c9a24a;
-  --c-bg: #fbf6ec;
-  --c-text: #2a2420;
+  --c-primary: #023934;
+  --c-accent: #9b2c2c;
+  --c-gold: #c09a5e;
+  --c-bg: #f8f4ec;
+  --c-text: #1f2a28;
 }
 
 @theme inline {
@@ -22,6 +22,20 @@
   --font-display: var(--font-heading), Georgia, serif;
 }
 
+/* Vaste paginabreedte: breed op desktop, met nette marges */
+@utility wrap {
+  width: 100%;
+  max-width: 82rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 2.5rem;
+  }
+}
+
 html {
   -webkit-tap-highlight-color: transparent;
 }
@@ -35,7 +49,7 @@ body {
 
 /* Gouden folie-effect voor koppen en randen */
 .gold-text {
-  background: linear-gradient(100deg, #9c7a2c 0%, var(--c-gold) 30%, #f3dc9a 50%, var(--c-gold) 70%, #9c7a2c 100%);
+  background: linear-gradient(100deg, #8f6f3d 0%, var(--c-gold) 30%, #e6cfa3 50%, var(--c-gold) 70%, #8f6f3d 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -45,12 +59,12 @@ body {
   border: 1.5px solid transparent;
   background:
     linear-gradient(var(--card-bg, white), var(--card-bg, white)) padding-box,
-    linear-gradient(120deg, #9c7a2c, var(--c-gold), #f3dc9a, var(--c-gold), #9c7a2c) border-box;
+    linear-gradient(120deg, #8f6f3d, var(--c-gold), #e6cfa3, var(--c-gold), #8f6f3d) border-box;
 }
 
 .gold-line {
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--c-gold), #f3dc9a, var(--c-gold), transparent);
+  background: linear-gradient(90deg, transparent, var(--c-gold), #e6cfa3, var(--c-gold), transparent);
 }
 
 /* Subtiel stofje van sterretjes op de donkere hero */
@@ -73,7 +87,7 @@ body {
   animation-name: snowfall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
-  text-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
 }
 
 @keyframes snowfall {
@@ -141,4 +155,86 @@ body {
   body {
     background: white;
   }
+}
+
+/* ---------- Kaartpins (Leaflet) ---------- */
+.ws-pin-wrap {
+  background: none;
+  border: 0;
+}
+.ws-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.ws-pin:hover {
+  transform: translate(-50%, -100%) scale(1.06);
+}
+.ws-pin__head {
+  position: relative;
+  border-radius: 9999px;
+  padding: 3px;
+  background: linear-gradient(135deg, #8f6f3d, var(--c-gold), #e6cfa3, var(--c-gold));
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.35);
+}
+.ws-pin__inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.ws-pin__tip {
+  width: 12px;
+  height: 12px;
+  margin-top: -7px;
+  transform: rotate(45deg);
+  background: var(--c-gold);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+.ws-pin__num {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: var(--c-primary);
+  color: white;
+  font: 700 11px/20px var(--font-sans);
+  text-align: center;
+  border: 2px solid white;
+}
+.ws-pin__label {
+  margin-top: 4px;
+  white-space: nowrap;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2px 8px;
+  font: 700 11px/16px var(--font-sans);
+  color: var(--c-text);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.ws-pin--active .ws-pin__label {
+  background: var(--c-primary);
+  color: white;
+}
+.ws-pin--active .ws-pin__head {
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--c-gold) 35%, transparent),
+    0 8px 20px -4px rgba(0, 0, 0, 0.4);
+}
+.leaflet-container {
+  font-family: var(--font-sans);
+}
+.leaflet-control-attribution {
+  font-size: 10px;
 }

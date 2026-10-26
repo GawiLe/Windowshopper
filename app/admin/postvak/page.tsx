@@ -5,7 +5,7 @@ import { formatDateTime } from "@/lib/utils"
 import { PageTitle } from "../ui"
 
 const STATUS: Record<string, { label: string; cls: string }> = {
-  sent: { label: "✓ Verstuurd", cls: "bg-primary-soft text-primary" },
+  sent: { label: "Verstuurd", cls: "bg-primary-soft text-primary" },
   pending: { label: "Bezig…", cls: "bg-stone-100 text-stone-500" },
   demo: { label: "Niet verstuurd (demo)", cls: "bg-stone-100 text-stone-500" },
   failed: { label: "Mislukt", cls: "bg-accent-soft text-accent" },

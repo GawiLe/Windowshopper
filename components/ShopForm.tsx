@@ -5,7 +5,10 @@ import { actions, useDB } from "@/lib/store"
 import type { Shop } from "@/lib/types"
 import { DAYS, cn, isValidEmail, slugify } from "@/lib/utils"
 import { Field, inputCls, SingleImagePicker, Switch } from "./forms"
-import { StreetMap } from "./StreetMap"
+import { ShopMap } from "./ShopMap"
+import { IconPicker } from "./IconPicker"
+import { geocodeAddress } from "@/lib/geo"
+import { LocateFixed } from "lucide-react"
 import { toast } from "./Toast"
 
 const ORDER = [1, 2, 3, 4, 5, 6, 0]
@@ -39,7 +42,7 @@ export function ShopForm({ shop, admin = false, onSaved }: { shop: Shop; admin?:
     if (Object.keys(err).length) return toast("Controleer de gemarkeerde velden")
     const next = { ...s, slug }
     actions.upsertShop(next)
-    toast("Opgeslagen ✨")
+    toast("Opgeslagen")
     onSaved?.(next)
   }
 
@@ -68,14 +71,13 @@ export function ShopForm({ shop, admin = false, onSaved }: { shop: Shop; admin?:
         <textarea value={s.bio} onChange={(e) => set("bio", e.target.value)} rows={4} maxLength={500} className={cn(inputCls, "h-auto py-3")} />
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Icoon" hint="Als er geen logo is">
-          <input value={s.emoji} onChange={(e) => set("emoji", e.target.value)} maxLength={4} className={cn(inputCls, "text-center text-2xl")} />
-        </Field>
-        <Field label="Kleur" hint="Achtergrond winkelpagina">
-          <input type="color" value={s.coverColor} onChange={(e) => set("coverColor", e.target.value)} className="h-12 w-full cursor-pointer rounded-xl border border-stone-200 bg-white p-1" />
-        </Field>
-      </div>
+      <Field label="Kleur" hint="Achtergrond van je winkelpagina en de illustraties">
+        <input type="color" value={s.coverColor} onChange={(e) => set("coverColor", e.target.value)} className="h-12 w-full cursor-pointer rounded-xl border border-stone-200 bg-white p-1" />
+      </Field>
+
+      <Field label="Standaardicoon voor producten" hint="Wordt getoond bij producten zonder foto">
+        <IconPicker value={s.icon} onChange={(k) => set("icon", k)} />
+      </Field>
 
       <Field label="Categorie">
         <select value={s.category} onChange={(e) => set("category", e.target.value)} className={inputCls}>
@@ -145,23 +147,33 @@ export function ShopForm({ shop, admin = false, onSaved }: { shop: Shop; admin?:
         <>
           <section>
             <p className="text-[15px] font-bold">Plek op de kaart</p>
-            <p className="mb-2 text-xs text-stone-500">Tik op de kaart waar de winkel zit.</p>
+            <p className="mb-2 text-xs text-stone-500">
+              Zoek automatisch op adres, of tik op de kaart om de pin precies goed te zetten.
+            </p>
+            <button
+              type="button"
+              onClick={async () => {
+                const pos = await geocodeAddress(s.address, db.settings.town)
+                if (!pos) return toast("Adres niet gevonden. Tik op de kaart om de winkel te plaatsen.")
+                setS((cur) => ({ ...cur, ...pos }))
+                toast("Winkel op de kaart gezet")
+              }}
+              className="mb-2 flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white"
+            >
+              <LocateFixed className="h-4 w-4" /> Zoek adres op de kaart
+            </button>
             <div className="overflow-hidden rounded-2xl ring-1 ring-stone-200">
-              <StreetMap
+              <ShopMap
                 shops={[...db.shops.filter((x) => x.id !== s.id && x.active), s]}
                 selectedId={s.id}
-                onPlace={(x, y) => setS((cur) => ({ ...cur, mapX: x, mapY: y }))}
+                onPick={(lat, lng) => setS((cur) => ({ ...cur, lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 }))}
+                className="h-72"
               />
             </div>
+            <p className="mt-1 text-xs text-stone-500">
+              {s.lat != null ? `Coördinaten: ${s.lat.toFixed(5)}, ${s.lng?.toFixed(5)}` : "Nog geen plek: wordt automatisch opgezocht via het adres."}
+            </p>
           </section>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Breedtegraad (optioneel)" hint="Voor een echte kaart later">
-              <input inputMode="decimal" value={s.lat ?? ""} onChange={(e) => set("lat", e.target.value ? Number(e.target.value) : null)} className={inputCls} />
-            </Field>
-            <Field label="Lengtegraad (optioneel)" hint={"\u00a0"}>
-              <input inputMode="decimal" value={s.lng ?? ""} onChange={(e) => set("lng", e.target.value ? Number(e.target.value) : null)} className={inputCls} />
-            </Field>
-          </div>
           <Field label="Inlogcode winkelier (demo)" hint="In de live-versie logt de winkelier in met een link per e-mail">
             <input value={s.loginCode} onChange={(e) => set("loginCode", e.target.value)} className={inputCls} />
           </Field>

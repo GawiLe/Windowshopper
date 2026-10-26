@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import { PackageCheck } from "lucide-react"
+import { IconBadge } from "@/components/Visuals"
 import { useCurrentShop } from "../../useShop"
 import { ProductForm } from "../../ProductForm"
 
@@ -12,7 +14,7 @@ export default function NewProductPage() {
   if (count >= max)
     return (
       <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
-        <p className="text-4xl">📦</p>
+        <IconBadge icon={PackageCheck} />
         <h1 className="mt-2 text-xl font-bold">Je etalage is vol</h1>
         <p className="mt-1 text-sm text-stone-500">Je hebt {max} producten. Verwijder er eerst één om iets nieuws toe te voegen.</p>
         <Link href="/winkelier/producten" className="mt-4 inline-block font-bold text-primary underline">

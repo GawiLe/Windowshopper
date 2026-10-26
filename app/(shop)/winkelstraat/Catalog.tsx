@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Search, SlidersHorizontal, X } from "lucide-react"
+import { Search, SearchX, SlidersHorizontal, X } from "lucide-react"
+import { IconBadge } from "@/components/Visuals"
 import { useDB } from "@/lib/store"
 import { visibleProducts, visibleShops } from "@/lib/selectors"
 import { ProductCard, ProductGrid } from "@/components/ProductCard"
@@ -70,11 +71,11 @@ export function Catalog() {
   const activeFilters = (price ? 1 : 0) + (onlyStock ? 1 : 0) + (shop ? 1 : 0) + (sort !== "default" ? 1 : 0)
 
   return (
-    <div className="px-4 pt-5">
-      <h1 className="font-display text-3xl font-semibold text-primary">Alle kado&apos;s</h1>
+    <div className="wrap pt-6">
+      <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">Alle kado&apos;s</h1>
       <p className="text-sm text-stone-500">Kadotips uit de etalages van {shops.length} winkels</p>
 
-      <div className="sticky top-14 z-30 -mx-4 mt-4 bg-cream/95 px-4 pb-3 pt-2 backdrop-blur md:top-16">
+      <div className="sticky top-16 z-30 -mx-4 mt-4 bg-cream/95 px-4 pb-3 pt-2 backdrop-blur sm:mx-0 sm:px-0 md:top-20">
         <div className="flex gap-2">
           <label className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" />
@@ -187,8 +188,8 @@ export function Catalog() {
         </ProductGrid>
       ) : (
         <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
-          <p className="text-5xl">⛄</p>
-          <p className="mt-3 font-bold">Niets gevonden</p>
+          <IconBadge icon={SearchX} />
+          <p className="mt-3 font-semibold">Niets gevonden</p>
           <p className="text-sm text-stone-500">Probeer een andere zoekterm of categorie.</p>
         </div>
       )}

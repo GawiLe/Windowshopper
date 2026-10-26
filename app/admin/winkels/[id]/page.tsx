@@ -21,15 +21,13 @@ function blankShop(category: string): Shop {
     category,
     logo: null,
     coverColor: "#1f4d3a",
-    emoji: "🎁",
+    icon: "gift",
     address: "De Kempenaerstraat ",
     phone: "",
     email: "",
     website: "",
     instagram: "",
     openingHours: [0, 1, 2, 3, 4, 5, 6].map((day) => ({ day, open: day === 0 ? null : "09:30", close: day === 0 ? null : "18:00" })),
-    mapX: 50,
-    mapY: 40,
     lat: null,
     lng: null,
     allowReservations: true,
@@ -64,7 +62,7 @@ export default function AdminShopEdit() {
             actions.logEmail({
               kind: "shop_welcome",
               to: s.email,
-              subject: `Welkom bij ${db.settings.siteName} ${db.settings.areaName}! 🎄`,
+              subject: `Welkom bij ${db.settings.siteName} ${db.settings.areaName}`,
               body: `Hoi ${s.name},\n\nLeuk dat jullie meedoen! Via ${typeof window !== "undefined" ? window.location.origin : ""}/winkelier kun je inloggen en tot ${db.settings.maxProductsPerShop} kadotips plaatsen. Maak gewoon een foto met je telefoon.\n\nJe inlogcode (demo): ${s.loginCode}\n\nFijne decembermaand!`,
             })
             router.replace(`/admin/winkels/${s.id}`)

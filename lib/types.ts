@@ -19,16 +19,14 @@ export interface Shop {
   category: string
   logo: string | null // data-URL of URL
   coverColor: string
-  emoji: string
+  icon: string // sleutel uit lib/icons.ts, gebruikt als er geen logo is
   address: string
   phone: string
   email: string // hier komen reserveringsmails binnen
   website: string
   instagram: string
   openingHours: OpeningHours[]
-  /** positie op de geïllustreerde kaart, in procenten (0-100) */
-  mapX: number
-  mapY: number
+  /** plek op de kaart; leeg = wordt automatisch opgezocht aan de hand van het adres */
   lat: number | null
   lng: number | null
   allowReservations: boolean
@@ -47,7 +45,7 @@ export interface Product {
   description: string
   price: number // in euro's
   images: string[] // data-URL's of URL's
-  emoji: string // fallback-illustratie als er geen foto is
+  icon: string // sleutel uit lib/icons.ts: illustratie zolang er geen foto is
   category: string
   tags: string[]
   stockMode: StockMode
@@ -112,6 +110,8 @@ export interface SiteSettings {
   reservationHours: number
   reservationsEnabled: boolean
   snowEnabled: boolean
+  /** middelpunt en zoomniveau van de kaart */
+  map: { lat: number; lng: number; zoom: number }
   colors: {
     primary: string // dennengroen
     accent: string // kerstrood

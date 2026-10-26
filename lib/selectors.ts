@@ -1,7 +1,13 @@
 import type { Database, Product, Shop } from "./types"
+import { houseNumber } from "./geo"
 
+/** Actieve winkels in de volgorde van de straat (op huisnummer), handig als looproute. */
 export function visibleShops(db: Database): Shop[] {
-  return db.shops.filter((s) => s.active).sort((a, b) => a.mapX - b.mapX)
+  return db.shops.filter((s) => s.active).sort(byStreetOrder)
+}
+
+export function byStreetOrder(a: Shop, b: Shop) {
+  return houseNumber(a.address) - houseNumber(b.address) || a.name.localeCompare(b.name)
 }
 
 export function visibleProducts(db: Database): Product[] {
@@ -38,4 +44,13 @@ export function relatedProducts(db: Database, product: Product, limit = 8): Prod
 
 export function shopBySlug(db: Database, slug: string) {
   return db.shops.find((s) => s.slug === slug)
+}
+
+/** Kan dit product gereserveerd worden? Zo niet: korte uitleg voor de bezoeker. */
+export function reserveStatus(db: Database, product: Product, shop: Shop): { ok: true } | { ok: false; reason: string } {
+  if (!db.settings.reservationsEnabled) return { ok: false, reason: "Reserveren is op dit moment niet mogelijk" }
+  if (!shop.allowReservations) return { ok: false, reason: "Deze winkel werkt niet met reserveringen" }
+  if (!product.reservable) return { ok: false, reason: "Dit product is alleen in de winkel te koop" }
+  if (!(product.stockMode === "count" ? product.stock > 0 : product.inStock)) return { ok: false, reason: "Op dit moment uitverkocht" }
+  return { ok: true }
 }

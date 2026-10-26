@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Mail, MoreHorizontal, Phone, RotateCcw, X } from "lucide-react"
+import { Check, Mail, MessageSquareText, MoreHorizontal, Phone, RotateCcw, X } from "lucide-react"
 import { actions } from "@/lib/store"
 import type { Reservation } from "@/lib/types"
 import { cn, euro, formatDate, formatDateTime, todayISO } from "@/lib/utils"
@@ -51,14 +51,14 @@ export function ReservationCard({ r }: { r: Reservation }) {
           <span>{euro(total)}</span>
         </li>
       </ul>
-      {r.note && <p className="bg-gold-soft px-4 py-2 text-sm">💬 “{r.note}”</p>}
+      {r.note && <p className="flex gap-2 bg-gold-soft px-4 py-2 text-sm"><MessageSquareText className="mt-0.5 h-4 w-4 shrink-0" /> “{r.note}”</p>}
 
       <div className="flex gap-2 p-3">
         {r.status === "reserved" ? (
           <button
             onClick={() => {
               actions.setReservationStatus(r.id, "picked_up")
-              toast(`✔ ${r.customerName} heeft opgehaald`)
+              toast(`${r.customerName} heeft opgehaald`)
             }}
             className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white active:scale-[0.98]"
           >

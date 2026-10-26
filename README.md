@@ -1,4 +1,4 @@
-# 🎄 Windowshoppen De Kempenaerstraat
+# Windowshoppen – Winkelgebied De Kempenaer
 
 Een feestelijke, mobiel-first multi-winkel webshop voor de decembermaand. Winkeliers uit één
 winkelgebied plaatsen elk maximaal 20 kadotips; bezoekers windowshoppen door de online straat,
@@ -40,8 +40,8 @@ Mails echt versturen? Maak een bestand `.env.local` (zie `.env.example`) met `RE
 - Online winkelstraat met zoeken, categorieën, prijsfilter en voorraadfilter
 - Productpagina met foto-swipe, voorraadstatus, "meer van deze winkel" en "ook leuk bij andere winkels"
 - Winkelpagina met logo, bio, openingstijden en alle producten
-- Geïllustreerde plattegrond van de straat met aanklikbare winkels (veegbaar op mobiel)
-- Kadolijstje zonder account: gegroepeerd per winkel als looproute, afvinken, aantallen
+- Echte kaart (Leaflet + OpenStreetMap) met pins in huisstijl; winkels worden automatisch op hun adres geplaatst (PDOK)
+- Kadolijstje zonder account: gegroepeerd per winkel als looproute, afvinken, aantallen, en per kado of het te reserveren is
 - Lijstje bewaren/delen: mail naar mezelf, WhatsApp/delen, link kopiëren, printen — via een link
   die alleen product-ID's bevat
 - Reserveren: kies ophaaldag, gegevens + expliciete toestemming → per winkel een ophaalcode
@@ -55,19 +55,19 @@ Mails echt versturen? Maak een bestand `.env.local` (zie `.env.example`) met `RE
 - Eigen winkelprofiel: logo, bio, contact, openingstijden
 
 **Beheer** (`/admin`)
-- Winkels toevoegen, wijzigen, verwijderen, op de kaart plaatsen, meekijken als winkelier
+- Winkels toevoegen, wijzigen, verwijderen, op de kaart plaatsen (adres opzoeken of op de kaart tikken), meekijken als winkelier
 - Alle producten modereren, alle reserveringen, verstuurde mails
 - Instellingen: teksten, kleuren (met thema's, live), sneeuw aan/uit, actieperiode, max. producten,
   reserveringsduur, categorieën, privacygegevens, export/import, opschonen persoonsgegevens
 
 ## Techniek
-Next.js (App Router) · React · Tailwind CSS v4 · lucide-react. Geen externe diensten nodig voor de demo.
+Next.js (App Router) · React · Tailwind CSS v4 · lucide-react · Leaflet. Huisstijl en logo in `public/brand/`. Geen externe diensten nodig voor de demo.
 
 ```
 app/(shop)/        publieke webshop (home, winkelstraat, product, winkel, kaart, lijstje, reserveren, privacy)
 app/winkelier/     winkeliersomgeving
 app/admin/         beheeromgeving
-components/        UI-componenten (kaart, productkaart, formulieren, sneeuw)
+components/        UI-componenten (kaart, productkaart, formulieren, iconen, sneeuw)
 lib/               types, demo-store, seed-data, e-mailtemplates, helpers
 db/                Neon/Postgres-schema (triggers, reserveerfunctie, opschonen) + seed
 scripts/           generator voor db/seed.sql

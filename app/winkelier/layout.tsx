@@ -112,7 +112,8 @@ function Login() {
   return (
     <div className="starry flex min-h-dvh flex-col items-center justify-center bg-primary px-4 py-10">
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
-        <p className="text-center text-4xl">🎄</p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/kempenaer-crest.svg" alt="" className="mx-auto h-12 w-auto rounded-lg bg-primary p-2" />
         <h1 className="mt-2 text-center font-display text-2xl font-semibold text-primary">Inloggen winkelier</h1>
         <p className="text-center text-sm text-stone-500">
           {db.settings.siteName} {db.settings.areaName}

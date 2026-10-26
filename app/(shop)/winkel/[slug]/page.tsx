@@ -2,11 +2,11 @@
 
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { AtSign, Clock, Globe, MapPin, Phone } from "lucide-react"
+import { AtSign, Clock, Globe, MapPin, Phone, Store } from "lucide-react"
 import { useDB, useHydrated } from "@/lib/store"
 import { shopBySlug, shopProducts } from "@/lib/selectors"
 import { ProductCard, ProductGrid } from "@/components/ProductCard"
-import { Ornament, ShopLogo } from "@/components/Visuals"
+import { IconBadge, Ornament, ShopLogo } from "@/components/Visuals"
 import { SnowDrift } from "@/components/Snow"
 import { DAYS, cn } from "@/lib/utils"
 
@@ -20,7 +20,7 @@ export default function ShopPage() {
     if (!hydrated) return <div className="h-[60vh]" />
     return (
       <div className="px-4 py-20 text-center">
-        <p className="text-5xl">🏠</p>
+        <IconBadge icon={Store} />
         <h1 className="mt-3 font-display text-2xl">Deze winkel doet (nog) niet mee</h1>
         <Link href="/winkels" className="mt-4 inline-block font-bold text-accent underline">
           Bekijk alle winkels
@@ -37,16 +37,19 @@ export default function ShopPage() {
     <div>
       <section className="starry relative text-white" style={{ background: shop.coverColor }}>
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30" />
-        <div className="relative mx-auto max-w-2xl px-5 pb-6 pt-8 text-center">
-          <ShopLogo shop={shop} size={104} className="mx-auto shadow-xl" />
-          <h1 className="mt-4 font-display text-3xl font-semibold">{shop.name}</h1>
-          <p className="gold-text text-sm font-bold uppercase tracking-[0.15em]">{shop.tagline}</p>
-          <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-white/90">{shop.bio}</p>
+        <div className="wrap relative flex flex-col gap-5 pb-8 pt-8 sm:flex-row sm:items-center sm:gap-8 md:pb-12 md:pt-12">
+          <ShopLogo shop={shop} size={120} className="shrink-0 shadow-xl" />
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.22em] text-gold">{shop.category}</p>
+            <h1 className="mt-1 font-display text-3xl font-semibold sm:text-5xl">{shop.name}</h1>
+            <p className="mt-1 text-sm font-medium uppercase tracking-[0.15em] text-white/80">{shop.tagline}</p>
+            <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-white/90">{shop.bio}</p>
+          </div>
         </div>
         <SnowDrift />
       </section>
 
-      <section className="px-4">
+      <section className="wrap">
         <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
           <a href={`https://maps.google.com/?q=${encodeURIComponent(`${shop.address}, ${db.settings.town}`)}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5">
             <MapPin className="h-5 w-5 shrink-0 text-accent" />
@@ -89,7 +92,7 @@ export default function ShopPage() {
           </ul>
         </details>
 
-        <Ornament className="my-7" />
+        <Ornament className="my-8 justify-start" />
         <h2 className="mb-3 font-display text-2xl font-semibold text-primary">
           In de etalage <span className="text-base font-normal text-stone-500">({products.length})</span>
         </h2>
@@ -100,7 +103,7 @@ export default function ShopPage() {
             ))}
           </ProductGrid>
         ) : (
-          <p className="rounded-2xl bg-white p-8 text-center text-stone-500">De etalage wordt nog ingericht ✨</p>
+          <p className="rounded-2xl bg-white p-8 text-center text-stone-500">De etalage wordt nog ingericht.</p>
         )}
       </section>
     </div>

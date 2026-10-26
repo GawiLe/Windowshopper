@@ -1,7 +1,10 @@
+import { createElement, useId } from "react"
 import type { Product, Shop } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { iconFor, monogram } from "@/lib/icons"
+import type { LucideIcon } from "lucide-react"
 
-/** Productfoto, of een feestelijke illustratie met emoji als er (nog) geen foto is. */
+/** Productfoto, of een rustige illustratie met icoon zolang er (nog) geen foto is. */
 export function ProductImage({
   product,
   color,
@@ -9,12 +12,13 @@ export function ProductImage({
   index = 0,
   sizes,
 }: {
-  product: Pick<Product, "images" | "emoji" | "title">
+  product: Pick<Product, "images" | "icon" | "title">
   color?: string
   className?: string
   index?: number
   sizes?: string
 }) {
+  const uid = useId()
   const src = product.images[index]
   if (src) {
     return (
@@ -23,23 +27,42 @@ export function ProductImage({
     )
   }
   const c = color ?? "var(--c-primary)"
+  const patternId = `wrap-${uid.replace(/:/g, "")}`
   return (
     <div
       role="img"
       aria-label={product.title}
       className={cn("relative flex h-full w-full items-center justify-center overflow-hidden", className)}
-      style={{
-        background: `radial-gradient(circle at 30% 25%, color-mix(in srgb, ${c} 18%, white), color-mix(in srgb, ${c} 38%, white) 70%)`,
-      }}
+      style={{ background: `linear-gradient(160deg, color-mix(in srgb, ${c} 7%, #fffdf8), color-mix(in srgb, ${c} 16%, #f7f1e6))` }}
     >
-      <span className="absolute -right-3 -top-3 text-5xl opacity-20">❄</span>
-      <span className="absolute -bottom-2 left-2 text-3xl opacity-15">❄</span>
-      <span className="text-6xl drop-shadow-sm sm:text-7xl">{product.emoji || "🎁"}</span>
+      {/* fijn ruitpatroon, als cadeaupapier */}
+      <svg aria-hidden className="absolute inset-0 h-full w-full opacity-[0.07]">
+        <defs>
+          <pattern id={patternId} width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <path d="M0 11h22M11 0v22" stroke={c} strokeWidth="1" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill={`url(#${patternId})`} />
+      </svg>
+      <span
+        className="relative flex aspect-square w-[46%] items-center justify-center rounded-full bg-white/80 shadow-sm"
+        style={{ boxShadow: `0 0 0 1.5px color-mix(in srgb, var(--c-gold) 70%, transparent), 0 10px 30px -12px ${c}` }}
+      >
+        {createElement(iconFor(product.icon), { className: "h-[46%] w-[46%]", strokeWidth: 1.25, style: { color: c } })}
+      </span>
     </div>
   )
 }
 
-export function ShopLogo({ shop, size = 48, className }: { shop: Pick<Shop, "logo" | "emoji" | "name" | "coverColor">; size?: number; className?: string }) {
+export function ShopLogo({
+  shop,
+  size = 48,
+  className,
+}: {
+  shop: Pick<Shop, "logo" | "name" | "coverColor">
+  size?: number
+  className?: string
+}) {
   return (
     <div
       className={cn("gold-border flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white", className)}
@@ -50,11 +73,11 @@ export function ShopLogo({ shop, size = 48, className }: { shop: Pick<Shop, "log
         <img src={shop.logo} alt={`Logo ${shop.name}`} className="h-full w-full object-cover" />
       ) : (
         <span
-          className="flex h-full w-full items-center justify-center"
-          style={{ background: `color-mix(in srgb, ${shop.coverColor} 14%, white)`, fontSize: size * 0.48 }}
+          className="flex h-full w-full items-center justify-center font-display font-semibold tracking-tight"
+          style={{ background: `color-mix(in srgb, ${shop.coverColor} 9%, white)`, color: shop.coverColor, fontSize: Math.max(9, size * 0.36) }}
           aria-label={`Logo ${shop.name}`}
         >
-          {shop.emoji}
+          {monogram(shop.name)}
         </span>
       )}
     </div>
@@ -93,5 +116,18 @@ export function Ornament({ className }: { className?: string }) {
       <span className="gold-text text-lg">✦</span>
       <span className="gold-line w-12" />
     </div>
+  )
+}
+
+/** Rond icoon met gouden rand, voor lege schermen en uitleg. */
+export function IconBadge({ icon: Icon, size = 64, className }: { icon: LucideIcon; size?: number; className?: string }) {
+  return (
+    <span
+      className={cn("gold-border mx-auto flex items-center justify-center rounded-full bg-white text-primary", className)}
+      style={{ width: size, height: size, ["--card-bg" as string]: "white" }}
+      aria-hidden
+    >
+      <Icon style={{ width: size * 0.42, height: size * 0.42 }} strokeWidth={1.5} />
+    </span>
   )
 }

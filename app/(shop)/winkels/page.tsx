@@ -11,10 +11,10 @@ export default function ShopsPage() {
   const db = useDB()
   const shops = visibleShops(db)
   return (
-    <div className="px-4 pt-5">
-      <h1 className="font-display text-3xl font-semibold text-primary">De winkels</h1>
+    <div className="wrap pt-6">
+      <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">De winkels</h1>
       <p className="text-sm text-stone-500">Van boekhandel tot bloemist: dit zijn de winkels die meedoen.</p>
-      <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {shops.map((s) => {
           const prods = shopProducts(db, s.id).slice(0, 3)
           const today = openToday(s.openingHours)

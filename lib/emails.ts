@@ -8,7 +8,7 @@ export function shopReservationEmail(settings: SiteSettings, shop: Shop, r: Rese
   const lines = r.items.map((i) => `• ${i.quantity}× ${i.title} (${euro(i.price)})`).join("\n")
   return {
     to: shop.email,
-    subject: `🎁 Nieuwe reservering ${r.code} – ophalen ${formatDate(r.pickupDate)}`,
+    subject: `Nieuwe reservering ${r.code} – ophalen ${formatDate(r.pickupDate)}`,
     body: `Hoi ${shop.name},
 
 Er is via ${settings.siteName} ${settings.areaName} iets bij jullie gereserveerd.
@@ -43,14 +43,14 @@ export function customerConfirmationEmail(
     .map((r) => {
       const shop = shops.find((s) => s.id === r.shopId)
       const items = r.items.map((i) => `   • ${i.quantity}× ${i.title} – ${euro(i.price * i.quantity)}`).join("\n")
-      return `🏠 ${shop?.name} – ${shop?.address}
+      return `${shop?.name} – ${shop?.address}
    Ophaalcode: ${r.code}
 ${items}`
     })
     .join("\n\n")
   return {
     to: first.customerEmail,
-    subject: `Je reservering bij ${settings.areaName} staat klaar 🎄`,
+    subject: `Je reservering bij ${settings.areaName} staat klaar`,
     body: `Hoi ${first.customerName},
 
 Bedankt! De winkels hebben je reservering ontvangen. Je kunt je cadeaus ophalen en afrekenen op ${formatDate(
@@ -69,7 +69,7 @@ De winkeliers van ${settings.areaName}`,
 }
 
 export function listEmailBody(settings: SiteSettings, url: string, lines: string[]) {
-  return `Mijn kadolijstje van ${settings.siteName} ${settings.areaName} 🎁
+  return `Mijn kadolijstje van ${settings.siteName} ${settings.areaName}
 
 ${lines.join("\n")}
 

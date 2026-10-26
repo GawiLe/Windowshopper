@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { Snowflake } from "lucide-react"
 import { useDB, useHydrated } from "@/lib/store"
 
 /** Lichte, CSS-gedreven sneeuwval. Schakelt uit via admin of bij 'reduce motion'. */
@@ -20,7 +21,7 @@ export function Snow({ count = 28 }: { count?: number }) {
           delay: -r(4) * 20,
           drift: `${(r(5) - 0.5) * 80}px`,
           opacity: 0.35 + r(6) * 0.55,
-          char: r(7) > 0.6 ? "❄" : "•",
+          flake: r(7) > 0.6,
         }
       }),
     [count],
@@ -37,7 +38,8 @@ export function Snow({ count = 28 }: { count?: number }) {
           style={
             {
               left: f.left,
-              fontSize: f.char === "❄" ? f.size : f.size * 0.9,
+              width: f.flake ? f.size : f.size * 0.45,
+              height: f.flake ? f.size : f.size * 0.45,
               opacity: f.opacity,
               animationDuration: `${f.duration}s`,
               animationDelay: `${f.delay}s`,
@@ -45,7 +47,11 @@ export function Snow({ count = 28 }: { count?: number }) {
             } as React.CSSProperties
           }
         >
-          {f.char}
+          {f.flake ? (
+            <Snowflake className="h-full w-full" strokeWidth={1.5} />
+          ) : (
+            <span className="block h-full w-full rounded-full bg-white" />
+          )}
         </span>
       ))}
     </div>

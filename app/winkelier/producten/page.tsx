@@ -1,10 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowDown, ArrowUp, EyeOff, Minus, Pencil, Plus } from "lucide-react"
+import { ArrowDown, ArrowUp, Camera, EyeOff, Minus, Pencil, Plus } from "lucide-react"
 import { actions } from "@/lib/store"
 import { shopProducts } from "@/lib/selectors"
-import { ProductImage, StockBadge } from "@/components/Visuals"
+import { IconBadge, ProductImage, StockBadge } from "@/components/Visuals"
 import { cn, euro, stockLabel } from "@/lib/utils"
 import type { Product } from "@/lib/types"
 import { useCurrentShop } from "../useShop"
@@ -38,7 +38,7 @@ export default function ProductsPage() {
 
       {products.length === 0 && (
         <Link href="/winkelier/producten/nieuw" className="mt-6 block rounded-3xl border-2 border-dashed border-primary/30 bg-white p-10 text-center">
-          <p className="text-4xl">📸</p>
+          <IconBadge icon={Camera} />
           <p className="mt-2 font-bold">Plaats je eerste kadotip</p>
           <p className="text-sm text-stone-500">Maak een foto, vul een prijs in en klaar.</p>
         </Link>
@@ -92,7 +92,7 @@ export default function ProductsPage() {
                     onClick={() => update(p, { inStock: !p.inStock })}
                     className={cn("h-12 flex-1 rounded-2xl text-sm font-bold", p.inStock ? "bg-primary-soft text-primary" : "bg-stone-200 text-stone-600")}
                   >
-                    {p.inStock ? "✅ Op voorraad — tik voor uitverkocht" : "⛔ Uitverkocht — tik voor op voorraad"}
+                    {p.inStock ? "Op voorraad · tik voor uitverkocht" : "Uitverkocht · tik voor op voorraad"}
                   </button>
                 )}
                 <Link href={`/winkelier/producten/${p.id}`} className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100" aria-label="Bewerken">

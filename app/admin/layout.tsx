@@ -82,7 +82,8 @@ function AdminLogin() {
         }}
         className="w-full max-w-sm space-y-4 rounded-3xl bg-white p-6 shadow-2xl"
       >
-        <p className="text-center text-4xl">🔑</p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/kempenaer-crest.svg" alt="" className="mx-auto h-12 w-auto rounded-lg bg-primary p-2" />
         <h1 className="text-center font-display text-2xl font-semibold text-primary">Beheerder</h1>
         <input type="email" inputMode="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mailadres" className={inputCls} autoFocus required />
         <input type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Wachtwoord" className={inputCls} required />

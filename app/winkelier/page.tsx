@@ -20,7 +20,7 @@ export default function ShopDashboard() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-primary">{greet}! 👋</h1>
+        <h1 className="font-display text-2xl font-semibold text-primary">{greet}!</h1>
         <p className="text-stone-500">Dit gebeurt er vandaag bij {shop.name}.</p>
       </div>
 
@@ -78,7 +78,7 @@ export default function ShopDashboard() {
             ))}
           </ul>
         ) : (
-          <p className="rounded-2xl bg-white p-6 text-center text-sm text-stone-500 shadow-sm">Geen ophaalafspraken voor vandaag ☕</p>
+          <p className="rounded-2xl bg-white p-6 text-center text-sm text-stone-500 shadow-sm">Geen ophaalafspraken voor vandaag.</p>
         )}
       </section>
     </div>

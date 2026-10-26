@@ -8,8 +8,7 @@ import type { Product, Shop } from "@/lib/types"
 import { cn, uid } from "@/lib/utils"
 import { Field, inputCls, PhotoPicker, Segmented, Switch } from "@/components/forms"
 import { toast } from "@/components/Toast"
-
-const EMOJIS = ["🎁", "📚", "🧸", "🕯️", "🧣", "💍", "🍫", "☕", "🌿", "🎄", "⭐", "🧀", "🍷", "🧴", "👜", "🎨"]
+import { IconPicker } from "@/components/IconPicker"
 
 export function ProductForm({ shop, product }: { shop: Shop; product?: Product }) {
   const db = useDB()
@@ -24,7 +23,7 @@ export function ProductForm({ shop, product }: { shop: Shop; product?: Product }
         description: "",
         price: 0,
         images: [],
-        emoji: shop.emoji || "🎁",
+        icon: shop.icon || "gift",
         category: shop.category,
         tags: [],
         stockMode: "toggle",
@@ -54,7 +53,7 @@ export function ProductForm({ shop, product }: { shop: Shop; product?: Product }
     }
     const msg = actions.upsertProduct({ ...p, title: p.title.trim(), price: Math.round(price * 100) / 100 })
     if (msg) return toast(msg)
-    toast(isNew ? "🎉 Je product staat online!" : "Opgeslagen")
+    toast(isNew ? "Je product staat online" : "Opgeslagen")
     router.push("/winkelier/producten")
   }
 
@@ -64,15 +63,9 @@ export function ProductForm({ shop, product }: { shop: Shop; product?: Product }
         <h2 className="mb-2 text-[15px] font-bold">Foto&apos;s</h2>
         <PhotoPicker images={p.images} onChange={(imgs) => set("images", imgs)} />
         {p.images.length === 0 && (
-          <div className="mt-3">
-            <p className="mb-1.5 text-xs text-stone-500">Nog geen foto? Kies dan een plaatje als tijdelijke illustratie:</p>
-            <div className="scrollbar-none flex gap-1.5 overflow-x-auto">
-              {EMOJIS.map((e) => (
-                <button type="button" key={e} onClick={() => set("emoji", e)} className={cn("h-11 w-11 shrink-0 rounded-xl text-2xl", p.emoji === e ? "bg-gold-soft ring-2 ring-gold" : "bg-white ring-1 ring-stone-200")}>
-                  {e}
-                </button>
-              ))}
-            </div>
+          <div className="mt-4">
+            <p className="mb-2 text-xs text-stone-500">Nog geen foto? Kies een icoon als tijdelijke afbeelding:</p>
+            <IconPicker value={p.icon} onChange={(k) => set("icon", k)} />
           </div>
         )}
       </section>
@@ -127,8 +120,8 @@ export function ProductForm({ shop, product }: { shop: Shop; product?: Product }
             value={p.inStock ? "yes" : "no"}
             onChange={(v) => set("inStock", v === "yes")}
             options={[
-              { value: "yes", label: "✅ Op voorraad" },
-              { value: "no", label: "⛔ Niet op voorraad" },
+              { value: "yes", label: "Op voorraad" },
+              { value: "no", label: "Niet op voorraad" },
             ]}
           />
         ) : (
